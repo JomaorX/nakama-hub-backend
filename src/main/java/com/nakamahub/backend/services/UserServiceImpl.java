@@ -46,9 +46,4 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
-    @Override
-    public boolean isEmail(String identifier) {
-        return identifier.contains("@");
-    }
-
 }

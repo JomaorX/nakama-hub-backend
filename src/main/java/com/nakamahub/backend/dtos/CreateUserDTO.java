@@ -19,8 +19,7 @@ public class CreateUserDTO {
 
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 6, max = 20, message = "La contraseña debe tener entre 6 y 20 carácteres")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).*$",
-        message = "La contraseña debe contener al menos una letra minúscula, una mayúscula y un número")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z]).{6,}$", message = "La contraseña debe ser de al menos 6 caracteres e incluir mayúscular y minúsculas")
 
     private String password;
 }
