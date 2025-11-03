@@ -47,9 +47,29 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    @Override
     public LoginResponseDTO authenticateUser(LoginUserDTO loginUser) {
-        return null;
+        String identifier = loginUser.getIdentifier();
+
+        Optional<User> userOpt = identifier.contains("@")
+                ? userRepository.findByEmail(identifier)
+                : userRepository.findByUsername(identifier);
+
+        User user = userOpt.orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos")
+        );
+
+        if (!passwordEncoder.matches(loginUser.getPassword(), user.getPassword())){
+            throw  new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos");
+        }
+
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+
+        return LoginResponseDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .token(token)
+                .build();
     }
 
 }
