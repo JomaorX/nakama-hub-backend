@@ -15,6 +15,10 @@ public class CreateUserDTO {
 
     @NotBlank(message = "El nombre de usuario es obligatorio")
     @Size(min = 4, max = 22, message = "El nombre de usuario debe tener entre 4 y 22 carácteres")
+    @Pattern(
+            regexp = "^[a-zA-Z0-9_]+$",
+    message = "El nombre de usuario solo puede contener letras, números y guiones bajos"
+    )
     private String username;
 
     @NotBlank(message = "La contraseña es obligatoria")

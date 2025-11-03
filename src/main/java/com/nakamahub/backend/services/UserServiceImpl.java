@@ -2,14 +2,18 @@ package com.nakamahub.backend.services;
 
 import com.nakamahub.backend.dtos.CreateUserDTO;
 import com.nakamahub.backend.dtos.LoginResponseDTO;
+import com.nakamahub.backend.dtos.LoginUserDTO;
 import com.nakamahub.backend.dtos.SignupResponseDTO;
 import com.nakamahub.backend.models.User;
 import com.nakamahub.backend.repositories.UserRepository;
+import com.nakamahub.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -19,13 +23,13 @@ public class UserServiceImpl implements UserService {
     @Autowired
     PasswordEncoder passwordEncoder;
 
+    @Autowired
+    JwtUtil jwtUtil;
+
     @Override
     public SignupResponseDTO registerUser(CreateUserDTO createUserDTO) {
-        if (userRepository.existsByEmail(createUserDTO.getEmail())){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email ya esta registrado");
-        }
-        if (userRepository.existsByUsername(createUserDTO.getUsername())){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya esta registrado");
+        if (userRepository.existsByEmail(createUserDTO.getEmail()) || userRepository.existsByUsername(createUserDTO.getUsername())){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credenciales inválidas o Ya existe un usuario con esos datos");
         }
 
         User newUser = new User();
@@ -33,6 +37,8 @@ public class UserServiceImpl implements UserService {
         newUser.setEmail(createUserDTO.getEmail());
         newUser.setUsername(createUserDTO.getUsername());
         newUser.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
+
+        userRepository.save(newUser);
 
         return SignupResponseDTO.builder()
                 .id(newUser.getId())
@@ -42,7 +48,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public LoginResponseDTO authenticateUser(LoginResponseDTO loginResponseDTO) {
+    public LoginResponseDTO authenticateUser(LoginUserDTO loginUser) {
         return null;
     }
 
