@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @NoArgsConstructor
@@ -30,5 +33,9 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private UserRole role = UserRole.ROLE_USER;
+
+    // Relación con los posts que ha creado
+    @OneToMany(mappedBy = "author")
+    private List<Post> posts = new ArrayList<>();
 
 }
