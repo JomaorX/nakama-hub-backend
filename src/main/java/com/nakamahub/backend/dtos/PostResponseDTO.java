@@ -1,7 +1,9 @@
 package com.nakamahub.backend.dtos;
 
+import com.nakamahub.backend.models.ContentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -9,6 +11,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 @Builder
 public class PostResponseDTO {
 
@@ -18,9 +21,11 @@ public class PostResponseDTO {
 
     private String content;
 
-    private String authorUsername;
+    private ContentType contentType;
 
-    private LocalDateTime CreatedAt;
+    private String serieName;
 
     List<String> categories;
+
+    private String authorUsername;
 }

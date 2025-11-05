@@ -28,8 +28,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Esto ahora sí funcionará
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/auth/**").permitAll() // Y esto también
-                        .requestMatchers(HttpMethod.GET,"/api/algo/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR")
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/post/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/post/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

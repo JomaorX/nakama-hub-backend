@@ -38,11 +38,12 @@ public class UserServiceImpl implements UserService {
         newUser.setUsername(createUserDTO.getUsername());
         newUser.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
 
+        User savedUser = userRepository.save(newUser);
 
         return SignupResponseDTO.builder()
-                .id(newUser.getId())
-                .email(newUser.getEmail())
-                .username(newUser.getUsername())
+                .id(savedUser.getId())
+                .email(savedUser.getEmail())
+                .username(savedUser.getUsername())
                 .build();
     }
 

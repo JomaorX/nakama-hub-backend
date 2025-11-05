@@ -6,18 +6,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
-
-@Table(name = "Categories")
 @Entity
+@Table(name = "series")
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
-public class Category {
-
+public class Serie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,4 +23,8 @@ public class Category {
     @Column(nullable = false, unique = true)
     private String name;
 
+    private String description;
+
+    @OneToMany(mappedBy = "serie")
+    private List<Post> posts = new ArrayList<>();
 }
