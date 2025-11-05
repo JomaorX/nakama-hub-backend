@@ -39,7 +39,7 @@ This project follows GitFlow. Each feature is developed in its own branch and me
 - `feature/comments` → *(in progress)*
 
 ## 📂 Folder Structure
-
+```
 src/
 ├── main/
 │   ├── java/
@@ -54,6 +54,7 @@ src/
 │   │       └── services/
 │   └── resources/
 │       └── application.properties
+```
 
 ## 📌 Notes
 
