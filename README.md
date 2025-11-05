@@ -4,7 +4,7 @@ Backend REST API for a content-sharing platform focused on anime, manga, series,
 
 ## 🚀 Technologies Used
 
-- Java 17
+- Java 25
 - Spring Boot
 - Spring Security (JWT)
 - JPA / Hibernate
