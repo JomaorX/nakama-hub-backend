@@ -2,6 +2,12 @@
 
 Backend REST API for a content-sharing platform focused on anime, manga, series, and general discussions.
 
+## 📖 API Documentation
+
+You can explore the full API documentation and test endpoints via Postman:
+
+[![Postman Docs](https://img.shields.io/badge/Postman-API_Docs-orange)](https://documenter.getpostman.com/view/46853536/2sB3WqvgX9)
+
 ## 🚀 Technologies Used
 
 - Java 25
