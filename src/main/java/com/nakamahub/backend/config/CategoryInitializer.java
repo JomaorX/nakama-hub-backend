@@ -18,7 +18,8 @@ public class CategoryInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        List<String> predefined = List.of("Acción", "Comedia", "Seinen", "Shonen", "Romance", "Ecchi", "Aventura");
+        List<String> predefined = List.of("Acción", "Comedia", "Seinen", "Shonen", "Romance", "Ecchi", "Aventura",
+                "Debate", "Opinión", "Cosplay", "Noticias", "Eventos", "Curiosidades", "Recomendaciones", "Crítica", "General");
 
         for (String name : predefined) {
             if (!categoryRepository.existsByName(name)) {
