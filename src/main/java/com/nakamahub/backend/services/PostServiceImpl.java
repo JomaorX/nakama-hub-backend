@@ -32,19 +32,24 @@ public class PostServiceImpl implements PostService{
 
     @Override
     public PostResponseDTO createPost(CreatePostDTO createPostDTO, String username) {
-        User author = userRepository.findByUsername(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Usuario no encontrado"));
-        boolean hasSerie = createPostDTO.getSerieName() != null && !createPostDTO.getSerieName().isBlank();
-        System.out.println("DTO RECIBIDO: " + createPostDTO);
+        User author = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario no encontrado"));
 
         ContentType type = createPostDTO.getContentType();
-        Serie postSerie = null;
+        String serieName = createPostDTO.getSerieName();
+        boolean hasSerieName = serieName != null && !serieName.isBlank();
 
-        if (createPostDTO.getSerieName() != null && !createPostDTO.getSerieName().isBlank()) {
-            postSerie = serieRepository.findByName(createPostDTO.getSerieName())
-                    .orElse(null);
+        Serie postSerie = null;
+        if (hasSerieName) {
+            postSerie = serieRepository.findByName(serieName).orElse(null);
+
+            // Validar si la serie no existe
+            if (postSerie == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serie no encontrada");
+            }
         }
 
-
+        // Validaciones de tipo de contenido según presencia de serie
         if (postSerie != null) {
             if (type == null || type == ContentType.GENERAL) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Si hay serie, el tipo de contenido debe ser ANIME, MANGA o SERIE");
@@ -56,39 +61,37 @@ public class PostServiceImpl implements PostService{
         }
 
 
-        if (createPostDTO.getSerieName() != null && !createPostDTO.getSerieName().isBlank() && postSerie == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serie no encontrada");
-        }
-
-
-
-        if (postRepository.existsByTitleAndAuthor(createPostDTO.getTitle(), author)){
+        // Título duplicado para el mismo autor
+        if (postRepository.existsByTitleAndAuthor(createPostDTO.getTitle(), author)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya posees un Post con ese título");
         }
 
+        // Procesar categorías
         Set<Category> categories = categoryProcess(createPostDTO.getCategories());
 
+        // Crear y guardar el post
         Post newPost = new Post();
-
         newPost.setTitle(createPostDTO.getTitle());
         newPost.setContent(createPostDTO.getContent());
-        newPost.setContentType(createPostDTO.getContentType());
+        newPost.setContentType(type);
         newPost.setSerie(postSerie);
         newPost.setCategories(categories);
         newPost.setAuthor(author);
 
         Post savedPost = postRepository.save(newPost);
 
+        // Construir respuesta segura
         return PostResponseDTO.builder()
                 .id(savedPost.getId())
                 .title(savedPost.getTitle())
                 .content(savedPost.getContent())
                 .categories(createPostDTO.getCategories())
                 .authorUsername(author.getUsername())
-                .serieName(savedPost.getSerie().getName())
+                .serieName(savedPost.getSerie() != null ? savedPost.getSerie().getName() : null)
                 .contentType(savedPost.getContentType())
                 .build();
     }
+
 
     @Override
     public List<PostResponseDTO> getAllPost() {
