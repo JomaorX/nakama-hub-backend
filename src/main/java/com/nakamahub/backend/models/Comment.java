@@ -25,6 +25,8 @@ public class Comment {
     @Column(nullable = false, length = 1000)
     private String content;
 
+    private Long parentId;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

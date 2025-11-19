@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class CreateCommentDTO {
     private String content;
     private Long postId;
+    private Long parentId;
 }

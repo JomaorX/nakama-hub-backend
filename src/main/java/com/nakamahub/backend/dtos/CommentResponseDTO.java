@@ -16,6 +16,7 @@ public class CommentResponseDTO {
     private String content;
     private Long post_id;
     private String authorUsername;
+    private Long parentId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
