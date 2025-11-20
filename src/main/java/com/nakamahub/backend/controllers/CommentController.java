@@ -16,7 +16,7 @@ public class CommentController {
     @Autowired
     CommentService commentService;
 
-    @GetMapping("")
+    @GetMapping("/{postId}")
     @ResponseStatus(HttpStatus.OK)
     public List<CommentResponseDTO> getPostComments (@PathVariable Long postId){
         return commentService.getCommentsByPost(postId);

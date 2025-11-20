@@ -29,8 +29,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/post/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/post/**").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/post/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/comment/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/comment/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
