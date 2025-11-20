@@ -16,6 +16,12 @@ public class CommentController {
     @Autowired
     CommentService commentService;
 
+    @GetMapping("")
+    @ResponseStatus(HttpStatus.OK)
+    public List<CommentResponseDTO> getPostComments (@PathVariable Long postId){
+        return commentService.getCommentsByPost(postId);
+    }
+
     @PostMapping("")
     @ResponseStatus(HttpStatus.CREATED)
     public CommentResponseDTO createComment (@RequestBody CreateCommentDTO newComment){

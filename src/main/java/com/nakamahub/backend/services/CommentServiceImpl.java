@@ -70,7 +70,19 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<CommentResponseDTO> getCommentsByPost(Long postId) {
-        return List.of();
+        List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
+
+        return comments.stream()
+                .map(comment -> CommentResponseDTO.builder()
+                        .id(comment.getId())
+                        .content(comment.getContent())
+                        .postId(comment.getPost().getId())
+                        .authorUsername(comment.getAuthor().getUsername())
+                        .parentId(comment.getParentId())
+                        .createdAt(comment.getCreatedAt())
+                        .updatedAt(comment.getUpdatedAt())
+                        .build())
+                .toList();
     }
 
     @Override
