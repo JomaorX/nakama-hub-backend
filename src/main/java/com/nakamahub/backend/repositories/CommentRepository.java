@@ -9,7 +9,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     boolean existsById(Long id);
 
-    List<Comment> findByPostIdOrderByCreatedAtAsc(Long postId);
+    List<Comment> findByPostIdAndParentIdIsNullOrderByCreatedAtAsc(Long postId);
 
     List<Comment> findByAuthorIdOrderByCreatedAtDesc(Long authorId);
 
