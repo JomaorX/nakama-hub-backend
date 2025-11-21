@@ -34,10 +34,6 @@ public class CommentServiceImpl implements CommentService {
         Post post = postRepository.findById(createCommentDTO.getPostId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post no encontrado"));
 
-        if (createCommentDTO.getContent() == null || createCommentDTO.getContent().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El contenido del comentario no puede estar vacío");
-        }
-
 
         Comment newComment = new Comment();
         newComment.setContent(createCommentDTO.getContent());
@@ -87,11 +83,35 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<CommentResponseDTO> getCommentsByUser(Long authorId) {
-        return List.of();
+        List<Comment> comments = commentRepository.findByAuthorIdOrderByCreatedAtDesc(authorId);
+
+        return comments.stream()
+                .map(comment -> CommentResponseDTO.builder()
+                        .id(comment.getId())
+                        .content(comment.getContent())
+                        .postId(comment.getPost().getId())
+                        .authorUsername(comment.getAuthor().getUsername())
+                        .parentId(comment.getParentId())
+                        .createdAt(comment.getCreatedAt())
+                        .updatedAt(comment.getUpdatedAt())
+                        .build())
+                .toList();
     }
 
     @Override
     public List<CommentResponseDTO> getCommentsByParent(Long parentId) {
-        return List.of();
+        List<Comment> comments = commentRepository.findByParentIdOrderByCreatedAtAsc(parentId);
+
+        return comments.stream()
+                .map(comment -> CommentResponseDTO.builder()
+                        .id(comment.getId())
+                        .content(comment.getContent())
+                        .postId(comment.getPost().getId())
+                        .authorUsername(comment.getAuthor().getUsername())
+                        .parentId(comment.getParentId())
+                        .createdAt(comment.getCreatedAt())
+                        .updatedAt(comment.getUpdatedAt())
+                        .build())
+                .toList();
     }
 }
