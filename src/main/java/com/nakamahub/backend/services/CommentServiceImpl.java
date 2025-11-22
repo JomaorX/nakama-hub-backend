@@ -9,11 +9,12 @@ import com.nakamahub.backend.repositories.CommentRepository;
 import com.nakamahub.backend.repositories.PostRepository;
 import com.nakamahub.backend.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 
 @Service
 public class CommentServiceImpl implements CommentService {
@@ -65,53 +66,32 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<CommentResponseDTO> getCommentsByPost(Long postId) {
-        List<Comment> comments = commentRepository.findByPostIdAndParentIdIsNullOrderByCreatedAtAsc(postId);
-
-        return comments.stream()
-                .map(comment -> CommentResponseDTO.builder()
-                        .id(comment.getId())
-                        .content(comment.getContent())
-                        .postId(comment.getPost().getId())
-                        .authorUsername(comment.getAuthor().getUsername())
-                        .parentId(comment.getParentId())
-                        .createdAt(comment.getCreatedAt())
-                        .updatedAt(comment.getUpdatedAt())
-                        .build())
-                .toList();
+    public Page<CommentResponseDTO> getCommentsByPost(Long postId, Pageable pageable) {
+        return commentRepository.findByPostIdAndParentIdIsNull(postId, pageable)
+                .map(this::mapToDTO);
     }
 
     @Override
-    public List<CommentResponseDTO> getCommentsByUser(Long authorId) {
-        List<Comment> comments = commentRepository.findByAuthorIdOrderByCreatedAtDesc(authorId);
-
-        return comments.stream()
-                .map(comment -> CommentResponseDTO.builder()
-                        .id(comment.getId())
-                        .content(comment.getContent())
-                        .postId(comment.getPost().getId())
-                        .authorUsername(comment.getAuthor().getUsername())
-                        .parentId(comment.getParentId())
-                        .createdAt(comment.getCreatedAt())
-                        .updatedAt(comment.getUpdatedAt())
-                        .build())
-                .toList();
+    public Page<CommentResponseDTO> getCommentsByUser(Long authorId, Pageable pageable) {
+        return commentRepository.findByAuthorId(authorId, pageable)
+                .map(this::mapToDTO);
     }
 
     @Override
-    public List<CommentResponseDTO> getCommentsByParent(Long parentId) {
-        List<Comment> comments = commentRepository.findByParentIdOrderByCreatedAtAsc(parentId);
+    public Page<CommentResponseDTO> getCommentsByParent(Long parentId, Pageable pageable) {
+        return commentRepository.findByParentId(parentId, pageable)
+                .map(this::mapToDTO);
+    }
 
-        return comments.stream()
-                .map(comment -> CommentResponseDTO.builder()
-                        .id(comment.getId())
-                        .content(comment.getContent())
-                        .postId(comment.getPost().getId())
-                        .authorUsername(comment.getAuthor().getUsername())
-                        .parentId(comment.getParentId())
-                        .createdAt(comment.getCreatedAt())
-                        .updatedAt(comment.getUpdatedAt())
-                        .build())
-                .toList();
+    private CommentResponseDTO mapToDTO(Comment comment) {
+        return CommentResponseDTO.builder()
+                .id(comment.getId())
+                .content(comment.getContent())
+                .postId(comment.getPost().getId())
+                .authorUsername(comment.getAuthor().getUsername())
+                .parentId(comment.getParentId())
+                .createdAt(comment.getCreatedAt())
+                .updatedAt(comment.getUpdatedAt())
+                .build();
     }
 }
