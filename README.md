@@ -42,7 +42,7 @@ This project follows GitFlow. Each feature is developed in its own branch and me
 
 ### Example branches:
 - `feature/auth` → [PR #1](https://github.com/JomaorX/nakama-hub-backend/pull/1): Authentication and post module
-- `feature/comments` → *(in progress)*
+- `feature/comments` → [PR #2](https://github.com/JomaorX/nakama-hub-backend/pull/2): Comment module
 
 ## 📂 Folder Structure
 ```
