@@ -8,6 +8,8 @@ import com.nakamahub.backend.repositories.PostRepository;
 import com.nakamahub.backend.repositories.SerieRepository;
 import com.nakamahub.backend.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -94,8 +96,8 @@ public class PostServiceImpl implements PostService{
 
 
     @Override
-    public List<PostResponseDTO> getAllPost() {
-        return postRepository.findAll().stream()
+    public Page<PostResponseDTO> getAllPost(Pageable pageable) {
+        return postRepository.findAll(pageable)
                 .map(post -> PostResponseDTO.builder()
                         .id(post.getId())
                         .title(post.getTitle())
@@ -104,8 +106,7 @@ public class PostServiceImpl implements PostService{
                         .authorUsername(post.getAuthor().getUsername())
                         .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
                         .contentType(post.getContentType())
-                        .build())
-                .toList();
+                        .build());
     }
 
     @Override
