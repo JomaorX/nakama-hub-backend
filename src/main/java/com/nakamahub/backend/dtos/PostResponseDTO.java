@@ -1,6 +1,8 @@
 package com.nakamahub.backend.dtos;
 
 import com.nakamahub.backend.models.ContentType;
+import com.nakamahub.backend.models.PostStatus;
+import com.nakamahub.backend.models.PrivacyLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,9 +25,19 @@ public class PostResponseDTO {
 
     private ContentType contentType;
 
+    private PostStatus status;
+
+    private PrivacyLevel privacy;
+
     private String serieName;
 
     List<String> categories;
 
     private String authorUsername;
+
+    private List<String> imageUrls;
+
+    private int viewsCount;
+
+    private int likesCount;
 }

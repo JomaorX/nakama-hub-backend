@@ -9,7 +9,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Table(name = "posts",
@@ -32,6 +34,12 @@ public class Post {
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
+
+    @ElementCollection
+    @CollectionTable(name = "post_images", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "image_url")
+    private List<String> imageUrls = new ArrayList<>();
+
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -60,5 +68,17 @@ public class Post {
 
     @Enumerated(EnumType.STRING)
     private ContentType contentType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PostStatus status = PostStatus.DRAFT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PrivacyLevel privacy = PrivacyLevel.PUBLIC;
+
+    private  int viewsCount = 0;
+    private int likesCount = 0;
+
 
 }
