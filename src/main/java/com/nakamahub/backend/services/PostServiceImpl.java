@@ -76,9 +76,15 @@ public class PostServiceImpl implements PostService{
         newPost.setTitle(createPostDTO.getTitle());
         newPost.setContent(createPostDTO.getContent());
         newPost.setContentType(type);
+        newPost.setStatus(createPostDTO.getStatus());
+        newPost.setPrivacy(createPostDTO.getPrivacy());
         newPost.setSerie(postSerie);
         newPost.setCategories(categories);
         newPost.setAuthor(author);
+
+        if (createPostDTO.getImageUrls() != null){
+            newPost.setImageUrls(createPostDTO.getImageUrls());
+        }
 
         Post savedPost = postRepository.save(newPost);
 
@@ -91,6 +97,9 @@ public class PostServiceImpl implements PostService{
                 .authorUsername(author.getUsername())
                 .serieName(savedPost.getSerie() != null ? savedPost.getSerie().getName() : null)
                 .contentType(savedPost.getContentType())
+                .status(savedPost.getStatus())
+                .privacy(savedPost.getPrivacy())
+                .imageUrls(savedPost.getImageUrls())
                 .build();
     }
 
@@ -106,6 +115,7 @@ public class PostServiceImpl implements PostService{
                         .authorUsername(post.getAuthor().getUsername())
                         .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
                         .contentType(post.getContentType())
+                        .imageUrls(post.getImageUrls())
                         .build());
     }
 
@@ -122,6 +132,7 @@ public class PostServiceImpl implements PostService{
                 .authorUsername(post.getAuthor().getUsername())
                 .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
                 .contentType(post.getContentType())
+                .imageUrls(post.getImageUrls())
                 .build();
     }
 
