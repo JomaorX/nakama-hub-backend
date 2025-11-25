@@ -76,8 +76,8 @@ public class PostServiceImpl implements PostService{
         newPost.setTitle(createPostDTO.getTitle());
         newPost.setContent(createPostDTO.getContent());
         newPost.setContentType(type);
-        newPost.setStatus(createPostDTO.getStatus());
-        newPost.setPrivacy(createPostDTO.getPrivacy());
+        newPost.setStatus(createPostDTO.getStatus() != null ? createPostDTO.getStatus() : PostStatus.DRAFT);
+        newPost.setPrivacy(createPostDTO.getPrivacy() != null ? createPostDTO.getPrivacy() : PrivacyLevel.PUBLIC);
         newPost.setSerie(postSerie);
         newPost.setCategories(categories);
         newPost.setAuthor(author);
@@ -88,42 +88,44 @@ public class PostServiceImpl implements PostService{
 
         Post savedPost = postRepository.save(newPost);
 
-        // Construir respuesta segura
-        return PostResponseDTO.builder()
-                .id(savedPost.getId())
-                .title(savedPost.getTitle())
-                .content(savedPost.getContent())
-                .categories(createPostDTO.getCategories())
-                .authorUsername(author.getUsername())
-                .serieName(savedPost.getSerie() != null ? savedPost.getSerie().getName() : null)
-                .contentType(savedPost.getContentType())
-                .status(savedPost.getStatus())
-                .privacy(savedPost.getPrivacy())
-                .imageUrls(savedPost.getImageUrls())
-                .build();
+        return toDTO(savedPost);
     }
 
 
     @Override
     public Page<PostResponseDTO> getAllPost(Pageable pageable) {
         return postRepository.findAll(pageable)
-                .map(post -> PostResponseDTO.builder()
-                        .id(post.getId())
-                        .title(post.getTitle())
-                        .content(post.getContent())
-                        .categories(post.getCategories().stream().map(Category::getName).toList())
-                        .authorUsername(post.getAuthor().getUsername())
-                        .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
-                        .contentType(post.getContentType())
-                        .imageUrls(post.getImageUrls())
-                        .build());
+                .map(this::toDTO);
     }
 
     @Override
     public PostResponseDTO getPostById(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
+        post.setViewsCount(post.getViewsCount() + 1);
+        Post savedPost = postRepository.save(post);
 
+        return toDTO(savedPost);
+    }
+
+    @Override
+    public PostResponseDTO likePost(Long id) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
+        post.setLikesCount(post.getLikesCount() + 1);
+        Post savedPost = postRepository.save(post);
+
+        return toDTO(savedPost);
+    }
+
+    private Set<Category> categoryProcess(List<String> categoryNames) {
+        return categoryNames.stream()
+                .map(name -> categoryRepository.findByName(name)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Categoría no válida: " + name)))
+                .collect(Collectors.toSet());
+    }
+
+    private PostResponseDTO toDTO (Post post) {
         return PostResponseDTO.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -133,14 +135,11 @@ public class PostServiceImpl implements PostService{
                 .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
                 .contentType(post.getContentType())
                 .imageUrls(post.getImageUrls())
+                .status(post.getStatus())
+                .privacy(post.getPrivacy())
+                .viewsCount(post.getViewsCount())
+                .likesCount(post.getLikesCount())
                 .build();
-    }
-
-    private Set<Category> categoryProcess(List<String> categoryNames) {
-        return categoryNames.stream()
-                .map(name -> categoryRepository.findByName(name)
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Categoría no válida: " + name)))
-                .collect(Collectors.toSet());
     }
 
 }

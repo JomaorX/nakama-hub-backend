@@ -42,4 +42,10 @@ public class PostController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return postService.createPost(body, username);
     }
+
+    @PostMapping("/{id}/like")
+    @ResponseStatus(HttpStatus.OK)
+    public PostResponseDTO likePost (@PathVariable Long id){
+        return postService.likePost(id);
+    }
 }

@@ -77,5 +77,8 @@ public class Post {
     @Column(nullable = false)
     private PrivacyLevel privacy = PrivacyLevel.PUBLIC;
 
+    private  int viewsCount = 0;
+    private int likesCount = 0;
+
 
 }

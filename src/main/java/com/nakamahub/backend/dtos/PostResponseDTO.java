@@ -26,8 +26,8 @@ public class PostResponseDTO {
     private ContentType contentType;
 
     private PostStatus status;
-    private PrivacyLevel privacy;
 
+    private PrivacyLevel privacy;
 
     private String serieName;
 
@@ -36,4 +36,8 @@ public class PostResponseDTO {
     private String authorUsername;
 
     private List<String> imageUrls;
+
+    private int viewsCount;
+
+    private int likesCount;
 }
