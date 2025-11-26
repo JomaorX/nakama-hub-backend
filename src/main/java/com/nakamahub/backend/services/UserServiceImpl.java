@@ -1,6 +1,10 @@
 package com.nakamahub.backend.services;
 
-import com.nakamahub.backend.dtos.*;
+import com.nakamahub.backend.dtos.auth.LoginResponseDTO;
+import com.nakamahub.backend.dtos.auth.LoginUserDTO;
+import com.nakamahub.backend.dtos.auth.SignupResponseDTO;
+import com.nakamahub.backend.dtos.post.PostResponseDTO;
+import com.nakamahub.backend.dtos.user.*;
 import com.nakamahub.backend.models.Category;
 import com.nakamahub.backend.models.Post;
 import com.nakamahub.backend.models.ProfilePrivacy;
@@ -141,6 +145,69 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+
+    @Override
+    public UserProfileDTO updateUsername(String currentUsername, UpdateUsernameDTO dto) {
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        if (dto.getUsername() != null && !dto.getUsername().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(dto.getUsername())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Nombre de usuario ya en uso");
+            }
+            user.setUsername(dto.getUsername());
+        }
+
+        userRepository.save(user);
+
+        return getMe(user.getUsername());
+
+    }
+
+    @Override
+    public UserProfileDTO updateEmail(String currentUsername, UpdateEmailDTO dto) {
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        if (dto.getEmail() != null && !dto.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(dto.getEmail())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email ya en uso");
+            }
+            user.setEmail(dto.getEmail());
+        }
+
+        userRepository.save(user);
+
+        return getMe(user.getUsername());
+
+    }
+
+    @Override
+    public UserProfileDTO updateBio(String currentUsername, UpdateBioDTO dto) {
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        if (dto.getBio() != null) user.setBio(dto.getBio());
+
+        userRepository.save(user);
+
+        return getMe(user.getUsername());
+
+    }
+
+    @Override
+    public UserProfileDTO updateAvatar(String currentUsername, UpdateAvatarDTO dto) {
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        if (dto.getAvatarUrl() != null) user.setAvatarUrl(dto.getAvatarUrl());
+
+        userRepository.save(user);
+
+        return getMe(user.getUsername());
+
+    }
+
     @Override
     public UserProfileDTO updatePrivacy(String username, ProfilePrivacy privacy) {
         User user = userRepository.findByUsername(username)
@@ -148,7 +215,7 @@ public class UserServiceImpl implements UserService {
 
         user.setPrivacy(privacy);
         userRepository.save(user);
-        return getUserProfileDTO(user);
+        return getMe(user.getUsername());
     }
 
     private PostResponseDTO getPostResponseDTO(Post post) {

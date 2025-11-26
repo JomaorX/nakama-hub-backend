@@ -1,5 +1,6 @@
-package com.nakamahub.backend.dtos;
+package com.nakamahub.backend.dtos.user;
 
+import com.nakamahub.backend.dtos.post.PostResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

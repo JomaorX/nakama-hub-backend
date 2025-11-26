@@ -1,7 +1,7 @@
 package com.nakamahub.backend.controllers;
 
-import com.nakamahub.backend.dtos.CommentResponseDTO;
-import com.nakamahub.backend.dtos.CreateCommentDTO;
+import com.nakamahub.backend.dtos.comment.CommentResponseDTO;
+import com.nakamahub.backend.dtos.comment.CreateCommentDTO;
 import com.nakamahub.backend.services.CommentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

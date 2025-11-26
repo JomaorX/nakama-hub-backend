@@ -1,7 +1,6 @@
 package com.nakamahub.backend.controllers;
 
-import com.nakamahub.backend.dtos.UserProfileDTO;
-import com.nakamahub.backend.dtos.UserPublicProfileDTO;
+import com.nakamahub.backend.dtos.user.*;
 import com.nakamahub.backend.models.ProfilePrivacy;
 import com.nakamahub.backend.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +29,6 @@ public class UserController {
         return userService.getProfile(username, viewer);
     }
 
-    @GetMapping("/me/privacy")
-    @ResponseStatus(HttpStatus.OK)
-    public UserProfileDTO updatePrivacy(@RequestBody String body) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        ProfilePrivacy privacy = ProfilePrivacy.valueOf(body.toUpperCase());
-        return userService.updatePrivacy(username, privacy);
-    }
-
     @PostMapping("/{username}/follow")
     @ResponseStatus(HttpStatus.OK)
     public UserPublicProfileDTO toggleFollow (@PathVariable String username) {
@@ -45,4 +36,41 @@ public class UserController {
         userService.toggleFollow(follower, username);
         return userService.getProfile(username, follower);
     }
+
+    @PutMapping("/me/username")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDTO updateUsername(@RequestBody UpdateUsernameDTO dto) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userService.updateUsername(currentUsername, dto);
+    }
+
+    @PutMapping("/me/email")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDTO updateEmail(@RequestBody UpdateEmailDTO dto) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userService.updateEmail(currentUsername, dto);
+    }
+
+    @PutMapping("/me/bio")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDTO updateBio(@RequestBody UpdateBioDTO dto) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userService.updateBio(currentUsername, dto);
+    }
+
+    @PutMapping("/me/avatar")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDTO updateAvatar(@RequestBody UpdateAvatarDTO dto) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userService.updateAvatar(currentUsername, dto);
+    }
+
+    @PutMapping("/me/privacy")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDTO updatePrivacy(@RequestBody UpdatePrivacyDTO dto) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        ProfilePrivacy privacy = ProfilePrivacy.valueOf(dto.getPrivacy().toUpperCase());
+        return userService.updatePrivacy(currentUsername, privacy);
+    }
+
 }

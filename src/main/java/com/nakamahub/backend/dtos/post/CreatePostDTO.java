@@ -1,4 +1,4 @@
-package com.nakamahub.backend.dtos;
+package com.nakamahub.backend.dtos.post;
 
 import com.nakamahub.backend.models.ContentType;
 import com.nakamahub.backend.models.PostStatus;

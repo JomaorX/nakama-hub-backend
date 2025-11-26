@@ -1,4 +1,4 @@
-package com.nakamahub.backend.dtos;
+package com.nakamahub.backend.dtos.post;
 
 import com.nakamahub.backend.models.ContentType;
 import com.nakamahub.backend.models.PostStatus;
@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @AllArgsConstructor

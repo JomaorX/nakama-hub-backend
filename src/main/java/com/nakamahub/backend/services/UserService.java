@@ -1,6 +1,9 @@
 package com.nakamahub.backend.services;
 
-import com.nakamahub.backend.dtos.*;
+import com.nakamahub.backend.dtos.auth.LoginResponseDTO;
+import com.nakamahub.backend.dtos.auth.LoginUserDTO;
+import com.nakamahub.backend.dtos.auth.SignupResponseDTO;
+import com.nakamahub.backend.dtos.user.*;
 import com.nakamahub.backend.models.ProfilePrivacy;
 
 public interface UserService {
@@ -11,4 +14,8 @@ public interface UserService {
     UserProfileDTO getMe (String username);
     UserPublicProfileDTO getProfile (String targetUsername, String viewerUsername);
     UserProfileDTO updatePrivacy (String username, ProfilePrivacy privacy);
+    UserProfileDTO updateUsername (String currentUsername, UpdateUsernameDTO dto);
+    UserProfileDTO updateEmail (String currentUsername, UpdateEmailDTO dto);
+    UserProfileDTO updateAvatar (String currentUsername, UpdateAvatarDTO dto);
+    UserProfileDTO updateBio (String currentUsername, UpdateBioDTO dto);
 }

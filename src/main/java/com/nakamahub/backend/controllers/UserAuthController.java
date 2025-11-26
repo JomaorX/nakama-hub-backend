@@ -1,9 +1,9 @@
 package com.nakamahub.backend.controllers;
 
-import com.nakamahub.backend.dtos.CreateUserDTO;
-import com.nakamahub.backend.dtos.LoginResponseDTO;
-import com.nakamahub.backend.dtos.LoginUserDTO;
-import com.nakamahub.backend.dtos.SignupResponseDTO;
+import com.nakamahub.backend.dtos.user.CreateUserDTO;
+import com.nakamahub.backend.dtos.auth.LoginResponseDTO;
+import com.nakamahub.backend.dtos.auth.LoginUserDTO;
+import com.nakamahub.backend.dtos.auth.SignupResponseDTO;
 import com.nakamahub.backend.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

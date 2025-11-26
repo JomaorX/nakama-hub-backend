@@ -1,7 +1,7 @@
 package com.nakamahub.backend.services;
 
-import com.nakamahub.backend.dtos.CreatePostDTO;
-import com.nakamahub.backend.dtos.PostResponseDTO;
+import com.nakamahub.backend.dtos.post.CreatePostDTO;
+import com.nakamahub.backend.dtos.post.PostResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
