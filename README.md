@@ -72,4 +72,4 @@ src/
 
 ## 📬 Contact
 
-Made with ❤️ by José Miguel Martínez [LinkedIn](https://www.linkedin.com/in/martinez97pro) • [GitHub](https://github.com/JomaorX)
+Made with ❤️ by José Miguel Martínez [LinkedIn](https://www.linkedin.com/in/martinez97pro) • [GitHub](https://github.com/JomaorX) • [Portfolio](https://jomaor.dev)
