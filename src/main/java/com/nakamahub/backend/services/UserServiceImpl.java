@@ -1,9 +1,9 @@
 package com.nakamahub.backend.services;
 
-import com.nakamahub.backend.dtos.CreateUserDTO;
-import com.nakamahub.backend.dtos.LoginResponseDTO;
-import com.nakamahub.backend.dtos.LoginUserDTO;
-import com.nakamahub.backend.dtos.SignupResponseDTO;
+import com.nakamahub.backend.dtos.*;
+import com.nakamahub.backend.models.Category;
+import com.nakamahub.backend.models.Post;
+import com.nakamahub.backend.models.ProfilePrivacy;
 import com.nakamahub.backend.models.User;
 import com.nakamahub.backend.repositories.UserRepository;
 import com.nakamahub.backend.security.JwtUtil;
@@ -98,4 +98,58 @@ public class UserServiceImpl implements UserService {
         userRepository.save(target);
     }
 
+    @Override
+    public UserProfileDTO getProfile(String targetUsername, String viewerUsername) {
+        User target = userRepository.findByUsername(targetUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        User viewer = userRepository.findByUsername(viewerUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Viewer no encontrado"));
+
+        boolean isOwner = target.equals(viewer);
+        boolean isFollower = target.getFollowers().contains(viewer);
+
+        if (target.getPrivacy() == ProfilePrivacy.PRIVATE && !isOwner && !isFollower) {
+            // Perfil privado → solo datos básicos
+            return UserProfileDTO.builder()
+                    .id(target.getId())
+                    .username(target.getUsername())
+                    .avatarUrl(target.getAvatarUrl())
+                    .bio(target.getBio())
+                    .build();
+        }
+
+        // Perfil público o viewer autorizado → datos completos
+        return UserProfileDTO.builder()
+                .id(target.getId())
+                .username(target.getUsername())
+                .email(target.getEmail())
+                .bio(target.getBio())
+                .avatarUrl(target.getAvatarUrl())
+                .role(target.getRole().name())
+                .followersCount(target.getFollowers().size())
+                .followingCount(target.getFollowing().size())
+                .postsCount(target.getPosts().size())
+                .followers(target.getFollowers().stream().map(User::getUsername).toList())
+                .following(target.getFollowing().stream().map(User::getUsername).toList())
+                .posts(target.getPosts().stream().map(this::toDTO).toList())
+                .build();
+    }
+
+    private PostResponseDTO toDTO (Post post) {
+        return PostResponseDTO.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .categories(post.getCategories().stream().map(Category::getName).toList())
+                .authorUsername(post.getAuthor().getUsername())
+                .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
+                .contentType(post.getContentType())
+                .imageUrls(post.getImageUrls())
+                .status(post.getStatus())
+                .privacy(post.getPrivacy())
+                .viewsCount(post.getViewsCount())
+                .likesCount(post.getLikesCount())
+                .build();
+    }
 }

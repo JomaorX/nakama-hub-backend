@@ -1,5 +1,6 @@
 package com.nakamahub.backend.repositories;
 
+import com.nakamahub.backend.dtos.UserProfileDTO;
 import com.nakamahub.backend.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 

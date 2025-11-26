@@ -40,6 +40,7 @@ public class User {
     private List<Post> posts = new ArrayList<>();
 
     private String bio;
+
     private String avatarUrl;
 
     @Builder.Default
@@ -63,4 +64,8 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "post_id")
     )
     private Set<Post> likedPosts = new HashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private ProfilePrivacy privacy = ProfilePrivacy.PUBLIC;
 }
