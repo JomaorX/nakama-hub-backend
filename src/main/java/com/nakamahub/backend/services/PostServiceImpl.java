@@ -86,6 +86,7 @@ public class PostServiceImpl implements PostService{
             newPost.setImageUrls(createPostDTO.getImageUrls());
         }
 
+        author.setReputationPoints(author.getReputationPoints() + 1);
         Post savedPost = postRepository.save(newPost);
 
         return toDTO(savedPost);
@@ -116,17 +117,22 @@ public class PostServiceImpl implements PostService{
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
 
+        User author = post.getAuthor();
+
         if (user.getLikedPosts().contains(post)) {
             // Ya tenía like → lo quitamos
             user.getLikedPosts().remove(post);
             post.setLikesCount(post.getLikesCount() - 1);
+            author.setReputationPoints(author.getReputationPoints() - 1);
         } else {
             // No tenía like → lo añadimos
             user.getLikedPosts().add(post);
             post.setLikesCount(post.getLikesCount() + 1);
+            author.setReputationPoints(author.getReputationPoints() + 1);
         }
 
         userRepository.save(user);
+        userRepository.save(author);
         postRepository.save(post);
 
         return toDTO(post);

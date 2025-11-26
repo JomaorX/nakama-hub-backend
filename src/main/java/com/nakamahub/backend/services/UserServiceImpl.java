@@ -92,10 +92,12 @@ public class UserServiceImpl implements UserService {
             // Unfollow
             target.getFollowers().remove(follower);
             follower.getFollowing().remove(target);
+            target.setReputationPoints(target.getReputationPoints() - 1);
         } else {
             // Follow
             target.getFollowers().add(follower);
             follower.getFollowing().add(target);
+            target.setReputationPoints(target.getReputationPoints() + 1);
         }
 
         userRepository.save(target);

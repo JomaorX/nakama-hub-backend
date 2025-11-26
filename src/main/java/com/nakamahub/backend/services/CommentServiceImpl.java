@@ -52,6 +52,8 @@ public class CommentServiceImpl implements CommentService {
             newComment.setParentId(parent.getId());
         }
 
+        author.setReputationPoints(author.getReputationPoints() + 1);
+        userRepository.save(author);
         Comment savedComment = commentRepository.save(newComment);
 
         return CommentResponseDTO.builder()
