@@ -99,7 +99,27 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserProfileDTO getProfile(String targetUsername, String viewerUsername) {
+    public UserProfileDTO getMe(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        return UserProfileDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .bio(user.getBio())
+                .avatarUrl(user.getAvatarUrl())
+                .role(String.valueOf(user.getRole()))
+                .followersCount(user.getFollowers().size())
+                .followingCount(user.getFollowing().size())
+                .reputationPoints(user.getReputationPoints())
+                .postsCount(user.getPosts().size())
+                .posts(user.getPosts().stream().map(this::toDTO).toList())
+                .build();
+    }
+
+    @Override
+    public UserPublicProfileDTO getProfile(String targetUsername, String viewerUsername) {
         User target = userRepository.findByUsername(targetUsername)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
@@ -111,7 +131,7 @@ public class UserServiceImpl implements UserService {
 
         if (target.getPrivacy() == ProfilePrivacy.PRIVATE && !isOwner && !isFollower) {
             // Perfil privado → solo datos básicos
-            return UserProfileDTO.builder()
+            return UserPublicProfileDTO.builder()
                     .id(target.getId())
                     .username(target.getUsername())
                     .avatarUrl(target.getAvatarUrl())
@@ -120,18 +140,14 @@ public class UserServiceImpl implements UserService {
         }
 
         // Perfil público o viewer autorizado → datos completos
-        return UserProfileDTO.builder()
+        return UserPublicProfileDTO.builder()
                 .id(target.getId())
                 .username(target.getUsername())
-                .email(target.getEmail())
                 .bio(target.getBio())
                 .avatarUrl(target.getAvatarUrl())
-                .role(target.getRole().name())
                 .followersCount(target.getFollowers().size())
                 .followingCount(target.getFollowing().size())
                 .postsCount(target.getPosts().size())
-                .followers(target.getFollowers().stream().map(User::getUsername).toList())
-                .following(target.getFollowing().stream().map(User::getUsername).toList())
                 .posts(target.getPosts().stream().map(this::toDTO).toList())
                 .build();
     }

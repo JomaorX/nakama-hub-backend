@@ -28,11 +28,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Esto ahora sí funcionará
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
+                        // Endpoints públicos
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/post/**").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/post/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/comment/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/comment/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/user/{username}").permitAll()
+
+                        // Endpoints que requieren autenticación
+                        .requestMatchers(HttpMethod.POST,"/api/post/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/comment/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
+                        .requestMatchers("/api/user/me").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
+
+                        // Tod0 lo demás requiere estar autenticado
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

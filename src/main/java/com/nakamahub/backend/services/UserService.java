@@ -7,6 +7,6 @@ public interface UserService {
     SignupResponseDTO registerUser (CreateUserDTO createUserDTO);
     LoginResponseDTO authenticateUser (LoginUserDTO loginUserDTO);
     void toggleFollow(String followerUsername, String targetUsername);
-    UserProfileDTO getProfile (String targetUsername, String viewerUsername);
-
+    UserProfileDTO getMe (String username);
+    UserPublicProfileDTO getProfile (String targetUsername, String viewerUsername);
 }
