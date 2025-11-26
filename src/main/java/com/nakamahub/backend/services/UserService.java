@@ -10,5 +10,5 @@ public interface UserService {
     void toggleFollow(String followerUsername, String targetUsername);
     UserProfileDTO getMe (String username);
     UserPublicProfileDTO getProfile (String targetUsername, String viewerUsername);
-    public UserProfileDTO updatePrivacy (String username, ProfilePrivacy privacy);
+    UserProfileDTO updatePrivacy (String username, ProfilePrivacy privacy);
 }

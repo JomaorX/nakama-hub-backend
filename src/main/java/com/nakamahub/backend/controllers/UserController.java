@@ -37,4 +37,12 @@ public class UserController {
         ProfilePrivacy privacy = ProfilePrivacy.valueOf(body.toUpperCase());
         return userService.updatePrivacy(username, privacy);
     }
+
+    @PostMapping("/{username}/follow")
+    @ResponseStatus(HttpStatus.OK)
+    public UserPublicProfileDTO toggleFollow (@PathVariable String username) {
+        String follower = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.toggleFollow(follower, username);
+        return userService.getProfile(username, follower);
+    }
 }

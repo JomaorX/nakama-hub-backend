@@ -74,29 +74,30 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void toggleFollow(String followerUsername, String targetUsername) {
+        if (followerUsername.equals(targetUsername)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No puedes seguirte a ti mismo");
+        }
+
         User follower = userRepository.findByUsername(followerUsername)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Follower no encontrado"));
 
         User target = userRepository.findByUsername(targetUsername)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario a seguir no encontrado"));
-
-        if (follower.equals(target)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No puedes seguirte a ti mismo");
-        }
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario objetivo no encontrado"));
 
         if (target.getFollowers().contains(follower)) {
-            // Ya lo seguía → dejar de seguir
+            // Unfollow
             target.getFollowers().remove(follower);
             follower.getFollowing().remove(target);
         } else {
-            // No lo seguía → empezar a seguir
+            // Follow
             target.getFollowers().add(follower);
             follower.getFollowing().add(target);
         }
 
-        userRepository.save(follower);
         userRepository.save(target);
+        userRepository.save(follower);
     }
+
 
     @Override
     public UserProfileDTO getMe(String username) {
