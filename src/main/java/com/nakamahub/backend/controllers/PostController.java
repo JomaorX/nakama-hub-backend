@@ -49,4 +49,11 @@ public class PostController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return postService.toggleLike(id, username);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void deletePost (@PathVariable Long id){
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        postService.deletePost(id, currentUsername);
+    }
 }

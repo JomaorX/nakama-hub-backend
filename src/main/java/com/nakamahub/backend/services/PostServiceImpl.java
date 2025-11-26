@@ -138,6 +138,19 @@ public class PostServiceImpl implements PostService{
         return toDTO(post);
     }
 
+    @Override
+    public void deletePost(Long id, String currentUsername) {
+    Post targetPost = postRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException (HttpStatus.NOT_FOUND, "Post no encontrado"));
+
+    if (!targetPost.getAuthor().getUsername().equals(currentUsername)){
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes borrar este post");
+    }
+
+    postRepository.delete(targetPost);
+    }
+
+
     private Set<Category> categoryProcess(List<String> categoryNames) {
         return categoryNames.stream()
                 .map(name -> categoryRepository.findByName(name)
