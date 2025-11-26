@@ -36,7 +36,7 @@ public class User {
     @Builder.Default
     private UserRole role = UserRole.ROLE_USER;
 
-    @OneToMany(mappedBy = "author")
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Post> posts = new ArrayList<>();
 
     private String bio;
@@ -68,4 +68,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private ProfilePrivacy privacy = ProfilePrivacy.PUBLIC;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AccountStatus status = AccountStatus.ACTIVE;
 }

@@ -18,4 +18,6 @@ public interface UserService {
     UserProfileDTO updateEmail (String currentUsername, UpdateEmailDTO dto);
     UserProfileDTO updateAvatar (String currentUsername, UpdateAvatarDTO dto);
     UserProfileDTO updateBio (String currentUsername, UpdateBioDTO dto);
+    void suspendAccount(String username);
+    void deleteAccount(String username);
 }

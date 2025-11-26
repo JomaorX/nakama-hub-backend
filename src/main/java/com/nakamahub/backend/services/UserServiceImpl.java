@@ -5,10 +5,7 @@ import com.nakamahub.backend.dtos.auth.LoginUserDTO;
 import com.nakamahub.backend.dtos.auth.SignupResponseDTO;
 import com.nakamahub.backend.dtos.post.PostResponseDTO;
 import com.nakamahub.backend.dtos.user.*;
-import com.nakamahub.backend.models.Category;
-import com.nakamahub.backend.models.Post;
-import com.nakamahub.backend.models.ProfilePrivacy;
-import com.nakamahub.backend.models.User;
+import com.nakamahub.backend.models.*;
 import com.nakamahub.backend.repositories.UserRepository;
 import com.nakamahub.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,6 +115,10 @@ public class UserServiceImpl implements UserService {
         User target = userRepository.findByUsername(targetUsername)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
+        if (target.getStatus() != AccountStatus.ACTIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Perfil suspendido");
+        }
+
         User viewer = userRepository.findByUsername(viewerUsername)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Viewer no encontrado"));
 
@@ -196,6 +197,22 @@ public class UserServiceImpl implements UserService {
         return getMe(user.getUsername());
 
     }
+
+    @Override
+    public void suspendAccount(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        user.setStatus(AccountStatus.SUSPENDED);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void deleteAccount(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        userRepository.delete(user);
+    }
+
 
     @Override
     public UserProfileDTO updateAvatar(String currentUsername, UpdateAvatarDTO dto) {

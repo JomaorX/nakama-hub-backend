@@ -1,5 +1,6 @@
 package com.nakamahub.backend.config;
 
+import com.nakamahub.backend.security.AccountStatusFilter;
 import com.nakamahub.backend.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +23,9 @@ public class SecurityConfig {
     @Autowired
     JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Autowired
+    private AccountStatusFilter accountStatusFilter;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -42,7 +46,9 @@ public class SecurityConfig {
                         // Tod0 lo demás requiere estar autenticado
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(accountStatusFilter, JwtAuthenticationFilter.class);
+
         return http.build();
     }
 

@@ -74,4 +74,18 @@ public class UserController {
         return userService.updatePrivacy(currentUsername, privacy);
     }
 
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccount() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.deleteAccount(username);
+    }
+
+    @PutMapping("/me/suspend")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void suspendAccount() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.suspendAccount(username);
+    }
+
 }
