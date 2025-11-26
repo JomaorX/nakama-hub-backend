@@ -49,7 +49,7 @@ public class CommentServiceImpl implements CommentService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El comentario padre pertenece a otro post");
             }
 
-            newComment.setParentId(parent.getId());
+            newComment.setParent(parent);
         }
 
         author.setReputationPoints(author.getReputationPoints() + 1);
@@ -61,7 +61,7 @@ public class CommentServiceImpl implements CommentService {
                 .content(savedComment.getContent())
                 .postId(savedComment.getPost().getId())
                 .authorUsername(savedComment.getAuthor().getUsername())
-                .parentId(savedComment.getParentId())
+                .parentId(savedComment.getParent() != null ? savedComment.getParent().getId() : null)
                 .createdAt(savedComment.getCreatedAt())
                 .updatedAt(savedComment.getUpdatedAt())
                 .build();
@@ -104,7 +104,7 @@ public class CommentServiceImpl implements CommentService {
                 .content(comment.getContent())
                 .postId(comment.getPost().getId())
                 .authorUsername(comment.getAuthor().getUsername())
-                .parentId(comment.getParentId())
+                .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 .build();
