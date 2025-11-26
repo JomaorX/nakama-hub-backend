@@ -2,6 +2,7 @@ package com.nakamahub.backend.controllers;
 
 import com.nakamahub.backend.dtos.UserProfileDTO;
 import com.nakamahub.backend.dtos.UserPublicProfileDTO;
+import com.nakamahub.backend.models.ProfilePrivacy;
 import com.nakamahub.backend.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,5 +28,13 @@ public class UserController {
         String viewer = SecurityContextHolder.getContext().getAuthentication().getName();
 
         return userService.getProfile(username, viewer);
+    }
+
+    @GetMapping("/me/privacy")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDTO updatePrivacy(@RequestBody String body) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        ProfilePrivacy privacy = ProfilePrivacy.valueOf(body.toUpperCase());
+        return userService.updatePrivacy(username, privacy);
     }
 }

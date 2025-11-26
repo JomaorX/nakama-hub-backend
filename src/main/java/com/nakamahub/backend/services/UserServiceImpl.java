@@ -103,19 +103,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        return UserProfileDTO.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .bio(user.getBio())
-                .avatarUrl(user.getAvatarUrl())
-                .role(String.valueOf(user.getRole()))
-                .followersCount(user.getFollowers().size())
-                .followingCount(user.getFollowing().size())
-                .reputationPoints(user.getReputationPoints())
-                .postsCount(user.getPosts().size())
-                .posts(user.getPosts().stream().map(this::toDTO).toList())
-                .build();
+        return getUserProfileDTO(user);
     }
 
     @Override
@@ -148,11 +136,21 @@ public class UserServiceImpl implements UserService {
                 .followersCount(target.getFollowers().size())
                 .followingCount(target.getFollowing().size())
                 .postsCount(target.getPosts().size())
-                .posts(target.getPosts().stream().map(this::toDTO).toList())
+                .posts(target.getPosts().stream().map(this::getPostResponseDTO).toList())
                 .build();
     }
 
-    private PostResponseDTO toDTO (Post post) {
+    @Override
+    public UserProfileDTO updatePrivacy(String username, ProfilePrivacy privacy) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        user.setPrivacy(privacy);
+        userRepository.save(user);
+        return getUserProfileDTO(user);
+    }
+
+    private PostResponseDTO getPostResponseDTO(Post post) {
         return PostResponseDTO.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -166,6 +164,22 @@ public class UserServiceImpl implements UserService {
                 .privacy(post.getPrivacy())
                 .viewsCount(post.getViewsCount())
                 .likesCount(post.getLikesCount())
+                .build();
+    }
+
+    private UserProfileDTO getUserProfileDTO(User user) {
+        return UserProfileDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .bio(user.getBio())
+                .avatarUrl(user.getAvatarUrl())
+                .role(String.valueOf(user.getRole()))
+                .followersCount(user.getFollowers().size())
+                .followingCount(user.getFollowing().size())
+                .reputationPoints(user.getReputationPoints())
+                .postsCount(user.getPosts().size())
+                .posts(user.getPosts().stream().map(this::getPostResponseDTO).toList())
                 .build();
     }
 }

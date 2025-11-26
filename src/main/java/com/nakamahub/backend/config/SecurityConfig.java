@@ -35,9 +35,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/user/{username}").permitAll()
 
                         // Endpoints que requieren autenticación
+                        .requestMatchers("/api/user/me/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST,"/api/post/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST,"/api/comment/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
-                        .requestMatchers("/api/user/me").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
 
                         // Tod0 lo demás requiere estar autenticado
                         .anyRequest().authenticated()
