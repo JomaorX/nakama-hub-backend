@@ -109,13 +109,27 @@ public class PostServiceImpl implements PostService{
     }
 
     @Override
-    public PostResponseDTO likePost(Long id) {
+    public PostResponseDTO toggleLike(Long id, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
-        post.setLikesCount(post.getLikesCount() + 1);
-        Post savedPost = postRepository.save(post);
 
-        return toDTO(savedPost);
+        if (user.getLikedPosts().contains(post)) {
+            // Ya tenía like → lo quitamos
+            user.getLikedPosts().remove(post);
+            post.setLikesCount(post.getLikesCount() - 1);
+        } else {
+            // No tenía like → lo añadimos
+            user.getLikedPosts().add(post);
+            post.setLikesCount(post.getLikesCount() + 1);
+        }
+
+        userRepository.save(user);
+        postRepository.save(post);
+
+        return toDTO(post);
     }
 
     private Set<Category> categoryProcess(List<String> categoryNames) {

@@ -10,5 +10,5 @@ public interface PostService {
     PostResponseDTO createPost (CreatePostDTO createPostDTO, String username);
     Page<PostResponseDTO> getAllPost(Pageable pageable);
     PostResponseDTO getPostById(Long id);
-    PostResponseDTO likePost(Long id);
+    PostResponseDTO toggleLike(Long id, String username);
 }

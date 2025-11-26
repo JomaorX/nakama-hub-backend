@@ -45,7 +45,8 @@ public class PostController {
 
     @PostMapping("/{id}/like")
     @ResponseStatus(HttpStatus.OK)
-    public PostResponseDTO likePost (@PathVariable Long id){
-        return postService.likePost(id);
+    public PostResponseDTO toggleLike (@PathVariable Long id){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return postService.toggleLike(id, username);
     }
 }

@@ -9,5 +9,5 @@ public interface UserService {
 
     SignupResponseDTO registerUser (CreateUserDTO createUserDTO);
     LoginResponseDTO authenticateUser (LoginUserDTO loginUserDTO);
-
+    void toggleFollow(String followerUsername, String targetUsername);
 }
