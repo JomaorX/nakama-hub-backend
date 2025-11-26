@@ -3,6 +3,7 @@ package com.nakamahub.backend.controllers;
 import com.nakamahub.backend.dtos.user.*;
 import com.nakamahub.backend.models.ProfilePrivacy;
 import com.nakamahub.backend.services.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,35 +40,35 @@ public class UserController {
 
     @PutMapping("/me/username")
     @ResponseStatus(HttpStatus.OK)
-    public UserProfileDTO updateUsername(@RequestBody UpdateUsernameDTO dto) {
+    public UserProfileDTO updateUsername(@Valid @RequestBody UpdateUsernameDTO dto) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         return userService.updateUsername(currentUsername, dto);
     }
 
     @PutMapping("/me/email")
     @ResponseStatus(HttpStatus.OK)
-    public UserProfileDTO updateEmail(@RequestBody UpdateEmailDTO dto) {
+    public UserProfileDTO updateEmail(@Valid @RequestBody UpdateEmailDTO dto) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         return userService.updateEmail(currentUsername, dto);
     }
 
     @PutMapping("/me/bio")
     @ResponseStatus(HttpStatus.OK)
-    public UserProfileDTO updateBio(@RequestBody UpdateBioDTO dto) {
+    public UserProfileDTO updateBio(@Valid @RequestBody UpdateBioDTO dto) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         return userService.updateBio(currentUsername, dto);
     }
 
     @PutMapping("/me/avatar")
     @ResponseStatus(HttpStatus.OK)
-    public UserProfileDTO updateAvatar(@RequestBody UpdateAvatarDTO dto) {
+    public UserProfileDTO updateAvatar(@Valid @RequestBody UpdateAvatarDTO dto) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         return userService.updateAvatar(currentUsername, dto);
     }
 
     @PutMapping("/me/privacy")
     @ResponseStatus(HttpStatus.OK)
-    public UserProfileDTO updatePrivacy(@RequestBody UpdatePrivacyDTO dto) {
+    public UserProfileDTO updatePrivacy(@Valid @RequestBody UpdatePrivacyDTO dto) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         ProfilePrivacy privacy = ProfilePrivacy.valueOf(dto.getPrivacy().toUpperCase());
         return userService.updatePrivacy(currentUsername, privacy);

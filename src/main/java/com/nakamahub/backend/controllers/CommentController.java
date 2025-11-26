@@ -60,4 +60,11 @@ public class CommentController {
         return commentService.createComment(newComment, username);
     }
 
+    @DeleteMapping("/comment/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteComment (@PathVariable Long id){
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        commentService.deleteComment(id, currentUser);
+    }
+
 }

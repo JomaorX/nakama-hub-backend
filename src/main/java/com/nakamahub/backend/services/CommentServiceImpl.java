@@ -85,6 +85,19 @@ public class CommentServiceImpl implements CommentService {
                 .map(this::mapToDTO);
     }
 
+    @Override
+    public void deleteComment(Long commentId, String authorUsername) {
+    Comment targetComment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comentario no encontrado"));
+
+    if (!targetComment.getAuthor().getUsername().equals(authorUsername)){
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes borrar este comentario");
+    }
+
+    commentRepository.delete(targetComment);
+    }
+
+
     private CommentResponseDTO mapToDTO(Comment comment) {
         return CommentResponseDTO.builder()
                 .id(comment.getId())
