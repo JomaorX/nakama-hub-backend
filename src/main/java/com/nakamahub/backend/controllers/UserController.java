@@ -94,4 +94,10 @@ public class UserController {
         userService.suspendUserAsAuthority(username);
     }
 
+    @DeleteMapping("/{username}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccountAsAuthority (@PathVariable String username){
+        userService.deleteAccountAsAuthority(username);
+    }
+
 }

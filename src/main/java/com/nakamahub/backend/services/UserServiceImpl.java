@@ -222,6 +222,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void deleteAccountAsAuthority(String username) {
+        User targetUser = userRepository.findByUsername(username)
+                .orElseThrow( () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        targetUser.setStatus(AccountStatus.SUSPENDED);
+        userRepository.delete(targetUser);
+    }
+
+    @Override
     public UserProfileDTO updateAvatar(String currentUsername, UpdateAvatarDTO dto) {
         User user = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));

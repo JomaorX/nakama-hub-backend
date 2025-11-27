@@ -50,7 +50,7 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.PUT, "/api/users/*/suspend").hasAnyAuthority("ROLE_MODERATOR","ROLE_ADMIN")
                                 .requestMatchers(HttpMethod.DELETE, "/api/posts/*/authority").hasAnyAuthority("ROLE_MODERATOR","ROLE_ADMIN")
                                 .requestMatchers(HttpMethod.DELETE, "/api/comments/*/authority").hasAnyAuthority("ROLE_MODERATOR","ROLE_ADMIN")
-
+                                .requestMatchers(HttpMethod.DELETE, "/api/users/*").hasAnyAuthority("ROLE_MODERATOR","ROLE_ADMIN")
                         // Tod0 lo demás requiere estar autenticado
                         .anyRequest().authenticated()
                 )

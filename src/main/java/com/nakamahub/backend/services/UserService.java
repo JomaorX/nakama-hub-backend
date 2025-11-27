@@ -21,4 +21,5 @@ public interface UserService {
     void suspendAccount (String username);
     void deleteAccount (String username);
     void suspendUserAsAuthority(String username);
+    void deleteAccountAsAuthority (String username);
 }
