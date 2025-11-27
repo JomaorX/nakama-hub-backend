@@ -1,7 +1,7 @@
 package com.nakamahub.backend.services;
 
-import com.nakamahub.backend.dtos.CommentResponseDTO;
-import com.nakamahub.backend.dtos.CreateCommentDTO;
+import com.nakamahub.backend.dtos.comment.CommentResponseDTO;
+import com.nakamahub.backend.dtos.comment.CreateCommentDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -15,4 +15,9 @@ public interface CommentService {
     Page<CommentResponseDTO> getCommentsByUser(Long authorId, Pageable pageable);
 
     Page<CommentResponseDTO> getCommentsByParent (Long parentId, Pageable pageable);
+
+    void deleteComment (Long commentId, String authorUsername);
+
+    void deleteCommentAsAuthority(Long id);
+
 }

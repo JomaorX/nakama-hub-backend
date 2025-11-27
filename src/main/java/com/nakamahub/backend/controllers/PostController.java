@@ -1,17 +1,20 @@
 package com.nakamahub.backend.controllers;
 
-import com.nakamahub.backend.dtos.CreatePostDTO;
-import com.nakamahub.backend.dtos.PostResponseDTO;
+import com.nakamahub.backend.dtos.post.CreatePostDTO;
+import com.nakamahub.backend.dtos.post.PostResponseDTO;
 import com.nakamahub.backend.services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
-@RequestMapping("/api/post")
+@RequestMapping("/api/posts")
 public class PostController {
 
     @Autowired
@@ -19,8 +22,12 @@ public class PostController {
 
     @GetMapping("")
     @ResponseStatus(HttpStatus.OK)
-    public List<PostResponseDTO> getPosts (){
-        return  postService.getAllPost();
+    public Page<PostResponseDTO> getPosts (
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return  postService.getAllPost(pageable);
     }
 
     @GetMapping("/{id}")
@@ -35,4 +42,25 @@ public class PostController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return postService.createPost(body, username);
     }
+
+    @PostMapping("/{id}/like")
+    @ResponseStatus(HttpStatus.OK)
+    public PostResponseDTO toggleLike (@PathVariable Long id){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return postService.toggleLike(id, username);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void deletePost (@PathVariable Long id){
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        postService.deletePost(id, currentUsername);
+    }
+
+    @DeleteMapping("/{id}/authority")
+    @ResponseStatus(HttpStatus.OK)
+    void deletePostAsAuthority (@PathVariable Long id){
+        postService.deletePostAsAuthority(id);
+    }
+
 }

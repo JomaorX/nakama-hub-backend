@@ -9,6 +9,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "comments")
@@ -25,7 +27,12 @@ public class Comment {
     @Column(nullable = false, length = 1000)
     private String content;
 
-    private Long parentId;
+    @ManyToOne
+    @JoinColumn(name = "parent")
+    private Comment parent;
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> replies = new ArrayList<>();
 
     @CreationTimestamp
     @Column(updatable = false)

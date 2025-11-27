@@ -1,4 +1,4 @@
-package com.nakamahub.backend.dtos;
+package com.nakamahub.backend.dtos.comment;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

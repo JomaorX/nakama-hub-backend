@@ -1,4 +1,4 @@
-package com.nakamahub.backend.dtos;
+package com.nakamahub.backend.dtos.auth;
 
 import lombok.Builder;
 import lombok.Data;

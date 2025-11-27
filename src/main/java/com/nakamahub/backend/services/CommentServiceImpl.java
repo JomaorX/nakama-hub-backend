@@ -1,7 +1,7 @@
 package com.nakamahub.backend.services;
 
-import com.nakamahub.backend.dtos.CommentResponseDTO;
-import com.nakamahub.backend.dtos.CreateCommentDTO;
+import com.nakamahub.backend.dtos.comment.CommentResponseDTO;
+import com.nakamahub.backend.dtos.comment.CreateCommentDTO;
 import com.nakamahub.backend.models.Comment;
 import com.nakamahub.backend.models.Post;
 import com.nakamahub.backend.models.User;
@@ -49,9 +49,11 @@ public class CommentServiceImpl implements CommentService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El comentario padre pertenece a otro post");
             }
 
-            newComment.setParentId(parent.getId());
+            newComment.setParent(parent);
         }
 
+        author.setReputationPoints(author.getReputationPoints() + 1);
+        userRepository.save(author);
         Comment savedComment = commentRepository.save(newComment);
 
         return CommentResponseDTO.builder()
@@ -59,7 +61,7 @@ public class CommentServiceImpl implements CommentService {
                 .content(savedComment.getContent())
                 .postId(savedComment.getPost().getId())
                 .authorUsername(savedComment.getAuthor().getUsername())
-                .parentId(savedComment.getParentId())
+                .parentId(savedComment.getParent() != null ? savedComment.getParent().getId() : null)
                 .createdAt(savedComment.getCreatedAt())
                 .updatedAt(savedComment.getUpdatedAt())
                 .build();
@@ -83,13 +85,33 @@ public class CommentServiceImpl implements CommentService {
                 .map(this::mapToDTO);
     }
 
+    @Override
+    public void deleteComment(Long commentId, String authorUsername) {
+    Comment targetComment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comentario no encontrado"));
+
+    if (!targetComment.getAuthor().getUsername().equals(authorUsername)){
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes borrar este comentario");
+    }
+
+    commentRepository.delete(targetComment);
+    }
+
+    @Override
+    public void deleteCommentAsAuthority(Long id) {
+        Comment targetComment = commentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comentario no encontrado"));
+        commentRepository.delete(targetComment);
+    }
+
+
     private CommentResponseDTO mapToDTO(Comment comment) {
         return CommentResponseDTO.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
                 .postId(comment.getPost().getId())
                 .authorUsername(comment.getAuthor().getUsername())
-                .parentId(comment.getParentId())
+                .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 .build();
