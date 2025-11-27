@@ -32,16 +32,24 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Esto ahora sí funcionará
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        // Endpoints públicos
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/post/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/comment/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/user/{username}").permitAll()
+                                // Endpoints públicos
+                                .requestMatchers("/auth/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/users/{username}").permitAll()
 
-                        // Endpoints que requieren autenticación
-                        .requestMatchers("/api/user/me/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.POST,"/api/post/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.POST,"/api/comment/**").hasAnyAuthority("ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN")
+                                // Endpoints que requieren autenticación
+                                .requestMatchers("/api/users/me/**").hasAnyAuthority("ROLE_USER","ROLE_MODERATOR","ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyAuthority("ROLE_USER","ROLE_MODERATOR","ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/api/comments/**").hasAnyAuthority("ROLE_USER","ROLE_MODERATOR","ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/api/users/{username}/follow").hasAnyAuthority("ROLE_USER","ROLE_MODERATOR","ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/api/users/me/**").hasAnyAuthority("ROLE_USER","ROLE_MODERATOR","ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/api/users/me").hasAnyAuthority("ROLE_USER","ROLE_MODERATOR","ROLE_ADMIN")
+
+                                // Endpoints con permisos especiales
+                                .requestMatchers(HttpMethod.PUT, "/api/users/*/suspend").hasAnyAuthority("ROLE_MODERATOR","ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/api/posts/*/authority").hasAnyAuthority("ROLE_MODERATOR","ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/api/comments/*/authority").hasAnyAuthority("ROLE_MODERATOR","ROLE_ADMIN")
 
                         // Tod0 lo demás requiere estar autenticado
                         .anyRequest().authenticated()

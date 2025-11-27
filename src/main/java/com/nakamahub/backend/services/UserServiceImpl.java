@@ -213,6 +213,13 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
+    @Override
+    public void suspendUserAsAuthority(String username) {
+    User targetUser = userRepository.findByUsername(username)
+            .orElseThrow( () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+    targetUser.setStatus(AccountStatus.SUSPENDED);
+    userRepository.save(targetUser);
+    }
 
     @Override
     public UserProfileDTO updateAvatar(String currentUsername, UpdateAvatarDTO dto) {

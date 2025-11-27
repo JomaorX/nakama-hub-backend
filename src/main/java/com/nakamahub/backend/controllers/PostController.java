@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping("/api/post")
+@RequestMapping("/api/posts")
 public class PostController {
 
     @Autowired
@@ -56,4 +56,11 @@ public class PostController {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         postService.deletePost(id, currentUsername);
     }
+
+    @DeleteMapping("/{id}/authority")
+    @ResponseStatus(HttpStatus.OK)
+    void deletePostAsAuthority (@PathVariable Long id){
+        postService.deletePostAsAuthority(id);
+    }
+
 }

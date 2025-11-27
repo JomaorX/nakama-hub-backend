@@ -97,6 +97,13 @@ public class CommentServiceImpl implements CommentService {
     commentRepository.delete(targetComment);
     }
 
+    @Override
+    public void deleteCommentAsAuthority(Long id) {
+        Comment targetComment = commentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comentario no encontrado"));
+        commentRepository.delete(targetComment);
+    }
+
 
     private CommentResponseDTO mapToDTO(Comment comment) {
         return CommentResponseDTO.builder()

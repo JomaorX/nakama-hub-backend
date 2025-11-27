@@ -12,4 +12,5 @@ public interface PostService {
     PostResponseDTO getPostById(Long id);
     PostResponseDTO toggleLike(Long id, String username);
     void deletePost (Long id, String currentUsername);
+    void deletePostAsAuthority(Long id);
 }

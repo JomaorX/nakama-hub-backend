@@ -150,6 +150,13 @@ public class PostServiceImpl implements PostService{
     postRepository.delete(targetPost);
     }
 
+    @Override
+    public void deletePostAsAuthority(Long id) {
+        Post targetPost = postRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException (HttpStatus.NOT_FOUND, "Post no encontrado"));
+        postRepository.delete(targetPost);
+    }
+
 
     private Set<Category> categoryProcess(List<String> categoryNames) {
         return categoryNames.stream()

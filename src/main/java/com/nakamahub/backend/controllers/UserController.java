@@ -10,7 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 public class UserController {
     @Autowired
     UserService userService;
@@ -30,7 +30,7 @@ public class UserController {
         return userService.getProfile(username, viewer);
     }
 
-    @PostMapping("/{username}/follow")
+    @PutMapping ("/{username}/follow")
     @ResponseStatus(HttpStatus.OK)
     public UserPublicProfileDTO toggleFollow (@PathVariable String username) {
         String follower = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -86,6 +86,12 @@ public class UserController {
     public void suspendAccount() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         userService.suspendAccount(username);
+    }
+
+    @PutMapping("/{username}/suspend")
+    @ResponseStatus(HttpStatus.OK)
+    public void suspendAccountAsAuthority (@PathVariable String username){
+        userService.suspendUserAsAuthority(username);
     }
 
 }

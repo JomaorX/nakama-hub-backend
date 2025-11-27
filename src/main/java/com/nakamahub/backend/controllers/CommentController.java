@@ -15,10 +15,17 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping("/api/comment")
+@RequestMapping("/api/comments")
 public class CommentController {
     @Autowired
     CommentService commentService;
+
+    @PostMapping("")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentResponseDTO createComment (@Valid @RequestBody CreateCommentDTO newComment){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return commentService.createComment(newComment, username);
+    }
 
     @GetMapping("/post/{postId}")
     @ResponseStatus(HttpStatus.OK)
@@ -31,15 +38,15 @@ public class CommentController {
         return commentService.getCommentsByPost(postId, pageable);
     }
 
-    @GetMapping("/parent/{parentId}")
+    @GetMapping("/{commentId}/replies")
     @ResponseStatus(HttpStatus.OK)
     public Page<CommentResponseDTO> getReplies(
-            @PathVariable Long parentId,
+            @PathVariable Long commentId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending());
-        return commentService.getCommentsByParent(parentId, pageable);
+        return commentService.getCommentsByParent(commentId, pageable);
     }
 
     @GetMapping("/user/{authorId}")
@@ -53,18 +60,18 @@ public class CommentController {
         return commentService.getCommentsByUser(authorId, pageable);
     }
 
-    @PostMapping("")
-    @ResponseStatus(HttpStatus.CREATED)
-    public CommentResponseDTO createComment (@Valid @RequestBody CreateCommentDTO newComment){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return commentService.createComment(newComment, username);
-    }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteComment (@PathVariable Long id){
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
         commentService.deleteComment(id, currentUser);
+    }
+
+    @DeleteMapping("/{id}/authority")
+    @ResponseStatus(HttpStatus.OK)
+    void deletePostAsAuthority (@PathVariable Long id){
+        commentService.deleteCommentAsAuthority(id);
     }
 
 }
