@@ -32,6 +32,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Esto ahora sí funcionará
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
+                                // Swagger/OpenAPI (documentación pública)
+                                .requestMatchers("/swagger-ui/**").permitAll()
+                                .requestMatchers("/v3/api-docs/**").permitAll()
+                                .requestMatchers("/swagger-ui.html").permitAll()
+
                                 // Endpoints públicos
                                 .requestMatchers("/auth/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
