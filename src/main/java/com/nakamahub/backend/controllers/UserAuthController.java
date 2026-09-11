@@ -1,13 +1,14 @@
 package com.nakamahub.backend.controllers;
 
-import com.nakamahub.backend.dtos.user.CreateUserDTO;
 import com.nakamahub.backend.dtos.auth.LoginResponseDTO;
 import com.nakamahub.backend.dtos.auth.LoginUserDTO;
 import com.nakamahub.backend.dtos.auth.RefreshTokenRequestDTO;
 import com.nakamahub.backend.dtos.auth.SignupResponseDTO;
+import com.nakamahub.backend.dtos.user.CreateUserDTO;
+import com.nakamahub.backend.security.LoginAttemptPolicy;
 import com.nakamahub.backend.services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,31 +16,54 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class UserAuthController {
 
-    @Autowired
-    UserService userService;
+    private final UserService userService;
+    private final LoginAttemptPolicy attemptPolicy;
+
+    public UserAuthController(UserService userService, LoginAttemptPolicy attemptPolicy) {
+        this.userService = userService;
+        this.attemptPolicy = attemptPolicy;
+    }
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
-    public SignupResponseDTO signup (@Valid @RequestBody CreateUserDTO createUserDTO){
-        return userService.registerUser(createUserDTO);
+    public SignupResponseDTO signup(@Valid @RequestBody CreateUserDTO createUserDTO,
+                                    HttpServletRequest request) {
+        attemptPolicy.checkSignup(request);
+        SignupResponseDTO created = userService.registerUser(createUserDTO);
+        attemptPolicy.recordSignup(request);
+        return created;
     }
 
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public LoginResponseDTO login (@Valid @RequestBody LoginUserDTO loginUserDTO){
-        return  userService.authenticateUser(loginUserDTO);
+    public LoginResponseDTO login(@Valid @RequestBody LoginUserDTO loginUserDTO,
+                                  HttpServletRequest request) {
+        String identifier = loginUserDTO.getIdentifier();
+
+        // Se comprueba antes de tocar la base de datos: si la cuenta está bloqueada
+        // por intentos, ni siquiera merece la pena comparar la contraseña.
+        attemptPolicy.checkLogin(identifier, request);
+
+        try {
+            LoginResponseDTO session = userService.authenticateUser(loginUserDTO);
+            attemptPolicy.recordLoginSuccess(identifier, request);
+            return session;
+        } catch (RuntimeException ex) {
+            attemptPolicy.recordLoginFailure(identifier, request);
+            throw ex;
+        }
     }
 
     /** Canjea el token de refresco por un par nuevo. El anterior queda invalidado. */
     @PostMapping("/refresh")
     @ResponseStatus(HttpStatus.OK)
-    public LoginResponseDTO refresh (@Valid @RequestBody RefreshTokenRequestDTO dto){
+    public LoginResponseDTO refresh(@Valid @RequestBody RefreshTokenRequestDTO dto) {
         return userService.refreshSession(dto.getRefreshToken());
     }
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout (@Valid @RequestBody RefreshTokenRequestDTO dto){
+    public void logout(@Valid @RequestBody RefreshTokenRequestDTO dto) {
         userService.logout(dto.getRefreshToken());
     }
 }

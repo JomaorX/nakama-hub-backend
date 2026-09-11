@@ -68,6 +68,7 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 - Rotación en cada refresco con detección de reutilización: si reaparece un token
   ya gastado se revocan todas las sesiones del usuario
 - Cierre de sesión y cambio de contraseña, que invalida las sesiones abiertas
+- Límite de intentos por cuenta y por dirección, con `Retry-After` en la respuesta
 - Roles: `USER`, `MODERATOR`, `ADMIN`
 - Las cuentas suspendidas quedan bloqueadas en el filtro de seguridad
 

@@ -35,6 +35,9 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-2592000000}
       CORS_ALLOWED_ORIGINS: ${PUBLIC_ORIGIN}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
+      # Caddy fija X-Forwarded-For, así que aquí sí se puede confiar en ella.
+      FORWARD_HEADERS_STRATEGY: framework
 
   frontend:
     build: ./frontend

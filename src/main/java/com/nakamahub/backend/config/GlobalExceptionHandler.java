@@ -1,9 +1,11 @@
 package com.nakamahub.backend.config;
 
 import com.nakamahub.backend.dtos.error.ApiErrorDTO;
+import com.nakamahub.backend.security.TooManyAttemptsException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -34,6 +36,22 @@ public class GlobalExceptionHandler {
                 "Hay campos con valores no válidos",
                 request.getRequestURI(),
                 fieldErrors));
+    }
+
+    /**
+     * El límite de intentos añade la cabecera Retry-After para que el cliente sepa
+     * cuánto esperar en lugar de reintentar a ciegas.
+     */
+    @ExceptionHandler(TooManyAttemptsException.class)
+    public ResponseEntity<ApiErrorDTO> handleTooManyAttempts(TooManyAttemptsException ex,
+                                                             HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+                .body(ApiErrorDTO.of(
+                        HttpStatus.TOO_MANY_REQUESTS.value(),
+                        HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
+                        ex.getReason(),
+                        request.getRequestURI()));
     }
 
     /**
