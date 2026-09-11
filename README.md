@@ -53,6 +53,11 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 - Listados paginados por post, por hilo y por autor
 - Un comentario nunca revela el contenido de un post que el visitante no puede ver
 
+### 🔎 Búsqueda
+- `GET /api/search/posts` con filtros por texto, tipo de contenido, serie y categoría,
+  respetando siempre la privacidad de quien consulta
+- `GET /api/search/users` y `GET /api/search/series`
+
 ### 👤 Perfiles
 - Perfil público y privado, seguimiento entre usuarios y puntos de reputación
 - Edición de nombre de usuario, email, biografía, avatar y privacidad
@@ -67,8 +72,6 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 - Un cambio de nombre de usuario invalida los tokens emitidos antes
 
 ## 🧭 Pendiente
-
-- Buscador de posts, series y usuarios
 - Subida real de imágenes, ahora solo se guardan URLs
 - Verificación por email, recuperación de contraseña y refresh token
 - Reporte y bloqueo de usuarios
