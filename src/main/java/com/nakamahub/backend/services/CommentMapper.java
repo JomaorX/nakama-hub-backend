@@ -16,6 +16,7 @@ public class CommentMapper {
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
+                .edited(PostMapper.isEdited(comment.getCreatedAt(), comment.getUpdatedAt()))
                 .build();
     }
 }

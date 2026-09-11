@@ -59,6 +59,14 @@ class ContentEditingTest {
     }
 
     @Test
+    @DisplayName("Un post recién creado no sale marcado como editado")
+    void unPostRecienCreadoNoEstaEditado() throws Exception {
+        mockMvc.perform(get("/api/posts/" + post.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.edited").value(false));
+    }
+
+    @Test
     @DisplayName("Editar sin cambiar el título no choca con la unicidad por autor")
     void editarSinCambiarElTituloFunciona() throws Exception {
         mockMvc.perform(editar(post.getId(), "robin", """

@@ -1,0 +1,168 @@
+/* Tema y estilos base de Nakama Hub.
+   Oscuro por defecto, con variante clara para quien la tenga configurada. */
+
+:root {
+  --surface-1: #0f1115;
+  --surface-2: #161920;
+  --surface-3: #1f232c;
+  --border: #262b35;
+  --border-strong: #39404d;
+
+  --text: #e8eaf0;
+  --text-dim: #99a1b3;
+
+  --accent: #ff6b81;
+  --accent-hover: #ff8496;
+  --accent-contrast: #16181d;
+
+  --danger: #f0616d;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --surface-1: #fbfbfd;
+    --surface-2: #ffffff;
+    --surface-3: #f1f2f6;
+    --border: #e3e5ec;
+    --border-strong: #c8ccd8;
+
+    --text: #1a1d24;
+    --text-dim: #636b7d;
+
+    --accent: #e03e56;
+    --accent-hover: #c73147;
+    --accent-contrast: #ffffff;
+
+    --danger: #d93b49;
+
+    color-scheme: light;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--surface-1);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Composición */
+
+.stack { display: grid; gap: 1rem; align-content: start; }
+
+.page-head { display: grid; gap: 0.2rem; margin-bottom: 0.5rem; }
+.page-head h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
+.page-head__sub { margin: 0; color: var(--text-dim); font-size: 0.92rem; }
+
+.muted { color: var(--text-dim); }
+
+.empty {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: 14px;
+  color: var(--text-dim);
+}
+.empty h1 { color: var(--text); margin: 0; }
+.empty p { margin: 0; }
+
+/* Controles */
+
+.button, button[type='submit'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.6rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.button:hover, button[type='submit']:hover { background: var(--accent-hover); }
+.button:disabled, button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.button--small { padding: 0.42rem 0.85rem; font-size: 0.88rem; }
+
+.button--ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.button--ghost:hover { background: var(--surface-3); }
+
+.button--danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+.button--danger:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+label > span { font-weight: 600; }
+label > small { color: var(--text-dim); font-size: 0.8rem; }
+
+input, textarea, select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); outline: none; }
+textarea { resize: vertical; min-height: 5rem; }
+
+.error { color: var(--danger); font-size: 0.88rem; margin: 0; }
+
+.tag {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.tag--serie { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.tag--draft, .tag--private { color: var(--text); border-color: var(--border-strong); }
+
+/* Formularios de autenticación */
+
+.auth {
+  max-width: 24rem;
+  margin: 2rem auto;
+  display: grid;
+  gap: 1rem;
+}
+.auth h1 { margin: 0; font-size: 1.5rem; }
+.auth form { display: grid; gap: 0.9rem; }
+.auth .switch { color: var(--text-dim); font-size: 0.9rem; text-align: center; margin: 0; }

@@ -30,3 +30,29 @@ jobs:
           name: surefire-reports
           path: target/surefire-reports/
           if-no-files-found: ignore
+
+  frontend:
+    name: Compilar el frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm ci
+
+      - name: Ejecutar los tests
+        working-directory: frontend
+        run: npm test -- --watch=false
+
+      - name: Compilar con render en servidor
+        working-directory: frontend
+        run: npm run build

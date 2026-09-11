@@ -19,4 +19,7 @@ public class CommentResponseDTO {
     private Long parentId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    /** Ver la explicación en PostResponseDTO.edited. */
+    private boolean edited;
 }

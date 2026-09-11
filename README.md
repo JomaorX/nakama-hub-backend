@@ -1,7 +1,14 @@
-# Nakama Hub Backend
+# Nakama Hub
 
-API REST para una comunidad de anime, manga y series: publicaciones con hilos de
-comentarios anidados, categorías, seguimiento entre usuarios y reputación.
+Comunidad de anime, manga y series: publicaciones con hilos de comentarios
+anidados, categorías, seguimiento entre usuarios y reputación.
+
+El repositorio contiene las dos mitades del proyecto:
+
+| Carpeta | Qué es |
+|---|---|
+| raíz | API REST en Java con Spring Boot |
+| [`frontend/`](frontend) | Cliente en Angular con renderizado en servidor |
 
 ## 📖 Documentación de la API
 
@@ -24,6 +31,16 @@ Con la aplicación levantada, la documentación se genera del propio código:
 
 ## ⚙️ Puesta en marcha
 
+Para desarrollo, sin necesidad de instalar MySQL:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # API en :8080
+cd frontend && npm install && npm start                 # web en :4200
+```
+
+El perfil `dev` usa una base de datos en memoria que se vacía al parar el proceso.
+Contra MySQL de verdad:
+
 ```bash
 cp .env.example .env          # y rellena los valores
 openssl rand -base64 48       # genera el JWT_SECRET
@@ -36,6 +53,12 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 ```bash
 ./mvnw verify                 # compila y ejecuta la suite, sin necesidad de MySQL
 ```
+
+## 🚢 Despliegue
+
+Todo se levanta en un único servidor con `docker compose up -d --build`: MySQL,
+la API, el render en servidor de Angular y Caddy como proxy, que se encarga solo
+del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 
 ## 📦 Funcionalidad
 
@@ -104,8 +127,7 @@ mediante Pull Request.
 ## 📂 Estructura
 
 ```
-src/
-├── main/java/com/nakamahub/backend/
+├── src/main/java/com/nakamahub/backend/
 │   ├── config/         # seguridad, manejo de errores y datos iniciales
 │   ├── controllers/
 │   ├── dtos/
@@ -113,7 +135,8 @@ src/
 │   ├── repositories/
 │   ├── security/       # filtros JWT y utilidades
 │   └── services/
-└── test/java/com/nakamahub/backend/
+├── src/test/java/      # 85 tests de integración sobre H2
+└── frontend/           # cliente Angular, ver su propio README
 ```
 
 ## 📬 Contacto

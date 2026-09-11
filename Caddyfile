@@ -1,0 +1,21 @@
+# Caddy consigue y renueva el certificado de Let's Encrypt solo, sin configuración
+# extra. Por eso va aquí en lugar de nginx: en un proyecto de una persona, el
+# certificado es justo lo que se acaba dejando roto.
+
+{$DOMAIN} {
+	encode gzip zstd
+
+	# La API y la autenticación van al backend.
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+	handle /auth/* {
+		reverse_proxy backend:8080
+	}
+
+	# Todo lo demás lo sirve el render en servidor de Angular, que es lo que
+	# permite que Google indexe los posts.
+	handle {
+		reverse_proxy frontend:4000
+	}
+}

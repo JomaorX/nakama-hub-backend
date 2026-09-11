@@ -54,10 +54,12 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Base de datos en memoria para los tests y para el perfil dev, que permite
+             levantar la aplicación sin instalar MySQL. En producción se usa MySQL. -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
