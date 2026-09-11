@@ -4,6 +4,7 @@ import com.nakamahub.backend.models.*;
 import com.nakamahub.backend.repositories.CategoryRepository;
 import com.nakamahub.backend.repositories.CommentRepository;
 import com.nakamahub.backend.repositories.RefreshTokenRepository;
+import com.nakamahub.backend.repositories.ReportRepository;
 import com.nakamahub.backend.repositories.PostRepository;
 import com.nakamahub.backend.repositories.UserRepository;
 import com.nakamahub.backend.security.JwtUtil;
@@ -23,6 +24,7 @@ public class TestDataFactory {
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final ReportRepository reportRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -31,6 +33,7 @@ public class TestDataFactory {
                            CategoryRepository categoryRepository,
                            CommentRepository commentRepository,
                            RefreshTokenRepository refreshTokenRepository,
+                           ReportRepository reportRepository,
                            PasswordEncoder passwordEncoder,
                            JwtUtil jwtUtil) {
         this.userRepository = userRepository;
@@ -38,6 +41,7 @@ public class TestDataFactory {
         this.categoryRepository = categoryRepository;
         this.commentRepository = commentRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.reportRepository = reportRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
@@ -110,6 +114,9 @@ public class TestDataFactory {
 
     @Transactional
     public void clear() {
+        // Los reportes no se cascadean al borrar un usuario a propósito: sobreviven
+        // como historial de moderación. Aquí hay que limpiarlos explícitamente.
+        reportRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         commentRepository.deleteAll();
         postRepository.deleteAll();

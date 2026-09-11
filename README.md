@@ -67,6 +67,10 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 
 ### 🛡️ Moderación
 - Suspensión de cuentas y borrado de posts y comentarios
+- Reporte de posts, comentarios y cuentas por parte de cualquier usuario,
+  con copia del contenido denunciado para que editarlo o borrarlo no destruya
+  la prueba
+- Cola de moderación en `GET /api/reports`, con cierre y nota del moderador
 
 ### 🔒 Datos personales
 - Borrado de cuenta lógico con anonimización: se eliminan los datos personales y
@@ -77,7 +81,7 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 ## 🧭 Pendiente
 - Subida real de imágenes, ahora solo se guardan URLs
 - Verificación por email y recuperación de contraseña
-- Reporte y bloqueo de usuarios
+- Bloqueo de usuarios entre sí
 - Purgado definitivo de las cuentas anonimizadas pasado un plazo de retención
 - Migraciones con Flyway en lugar de `ddl-auto=update`
 - Documentación viva con springdoc
