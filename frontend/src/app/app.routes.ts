@@ -29,6 +29,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/posts/post-detail.page').then((m) => m.PostDetailPage),
   },
   {
+    path: 'post/:id/editar',
+    title: 'Editar publicación · Nakama Hub',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/posts/post-editor.page').then((m) => m.PostEditorPage),
+  },
+  {
+    path: 'ajustes',
+    title: 'Ajustes · Nakama Hub',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/settings/settings.page').then((m) => m.SettingsPage),
+  },
+  {
     path: 'u/:username',
     loadComponent: () => import('./features/profile/profile.page').then((m) => m.ProfilePage),
   },

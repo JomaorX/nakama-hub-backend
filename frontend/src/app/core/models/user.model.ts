@@ -24,6 +24,10 @@ export interface PublicProfile {
   followingCount: number;
   postsCount: number;
   posts: Post[] | null;
+  /** Si quien consulta ya sigue a esta cuenta. */
+  followedByMe: boolean;
+  /** Si el perfil es el de quien consulta. */
+  own: boolean;
 }
 
 export interface UserSearchResult {

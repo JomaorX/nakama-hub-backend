@@ -31,6 +31,12 @@ indexe, que es el único canal de crecimiento orgánico de una comunidad de nich
 público, prerenderizado para las pantallas estáticas y cliente para las privadas,
 donde renderizar en servidor solo produciría un parpadeo de contenido anónimo.
 
+**Metadatos por página.** `SeoService` fija título, descripción, canónica y Open
+Graph de cada publicación y cada perfil. Sin eso el renderizado en servidor no
+sirve de nada: todas las páginas compartirían el mismo título y el buscador no
+tendría con qué distinguirlas. Se ejecuta también en el servidor, así que las
+etiquetas ya vienen en el HTML aunque el rastreador no ejecute JavaScript.
+
 **Origen de la API.** En el navegador las peticiones salen relativas. En el
 render de servidor quien pide es Node, donde una ruta relativa no significa nada,
 así que ahí se inyecta la URL absoluta mediante `API_ORIGIN`.

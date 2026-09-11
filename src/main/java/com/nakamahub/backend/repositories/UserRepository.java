@@ -5,7 +5,9 @@ import com.nakamahub.backend.models.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -17,4 +19,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /** Búsqueda por nombre de usuario. Filtra por estado para no listar cuentas suspendidas ni borradas. */
     Page<User> findByUsernameContainingIgnoreCaseAndStatus(String username, AccountStatus status, Pageable pageable);
+
+    /** Perfiles que un buscador puede indexar: activos y no marcados como privados. */
+    @Query("""
+            select u
+            from User u
+            where u.status = com.nakamahub.backend.models.AccountStatus.ACTIVE
+              and u.privacy = com.nakamahub.backend.models.ProfilePrivacy.PUBLIC
+            """)
+    List<User> findPublicProfiles(Pageable pageable);
 }

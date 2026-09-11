@@ -54,7 +54,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/error", "/sitemap.xml").permitAll()
                         // Documentación de la API. Conviene cerrarla en producción si la
                         // comunidad crece: enseña la superficie entera a cualquiera.
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

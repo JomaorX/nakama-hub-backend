@@ -45,12 +45,12 @@ public class PostResponseDTO {
 
     private LocalDateTime updatedAt;
 
-    /**
-     * Si el post se ha editado después de publicarse.
-     *
-     * No basta con comparar updatedAt con createdAt: Hibernate obtiene cada marca de
-     * tiempo por separado al insertar, así que difieren en microsegundos desde el
-     * primer momento y todo saldría como editado.
-     */
+    /** Si el autor ha editado el post después de publicarlo. Ver Post.editedAt. */
     private boolean edited;
+
+    /** Si quien consulta ya dio me gusta. False para visitantes anónimos. */
+    private boolean likedByMe;
+
+    /** Si quien consulta es el autor, para decidir si ofrecer editar y borrar. */
+    private boolean own;
 }

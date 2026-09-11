@@ -55,6 +55,16 @@ public class Post {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    /**
+     * Momento de la última edición hecha por el autor, null si nunca se ha editado.
+     *
+     * No sirve comparar updatedAt con createdAt: Hibernate obtiene las dos marcas por
+     * separado al insertar, así que difieren desde el primer momento, y cualquier
+     * escritura interna (un contador de visitas, por ejemplo) mueve updatedAt sin que
+     * nadie haya editado nada.
+     */
+    private LocalDateTime editedAt;
+
     // Autor del post
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)

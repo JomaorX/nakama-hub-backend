@@ -19,6 +19,10 @@ export interface Post {
   updatedAt: string;
   /** Lo calcula el backend con un margen, porque las dos marcas de tiempo difieren al insertar. */
   edited: boolean;
+  /** Si quien consulta ya dio me gusta. */
+  likedByMe: boolean;
+  /** Si quien consulta es el autor. */
+  own: boolean;
 }
 
 export interface PostPayload {

@@ -13,6 +13,11 @@
 		reverse_proxy backend:8080
 	}
 
+	# El mapa del sitio lo genera el backend, que es quien sabe qué posts hay.
+	handle /sitemap.xml {
+		reverse_proxy backend:8080
+	}
+
 	# Todo lo demás lo sirve el render en servidor de Angular, que es lo que
 	# permite que Google indexe los posts.
 	handle {

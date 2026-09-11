@@ -1,0 +1,13 @@
+# Las pantallas privadas se renderizan en cliente, así que un rastreador solo
+# vería el armazón vacío. Aun así se excluyen explícitamente para no gastar
+# presupuesto de rastreo en ellas.
+
+User-agent: *
+Allow: /
+Disallow: /muro
+Disallow: /ajustes
+Disallow: /publicar
+Disallow: /entrar
+Disallow: /registro
+
+Sitemap: /sitemap.xml

@@ -55,7 +55,8 @@ class ContentEditingTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Poneglyphs y el Siglo Vacío"))
                 .andExpect(jsonPath("$.content").value("Una revisión completa de la teoría original"))
-                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty())
+                .andExpect(jsonPath("$.edited").value(true));
     }
 
     @Test

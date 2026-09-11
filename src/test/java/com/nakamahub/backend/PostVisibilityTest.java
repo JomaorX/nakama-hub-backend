@@ -90,6 +90,49 @@ class PostVisibilityTest {
     }
 
     @Test
+    @DisplayName("El feed dice si el visitante ya dio me gusta a cada post")
+    void elFeedIndicaSiYaSeDioMeGusta() throws Exception {
+        User lector = data.user("mihawk");
+        data.like(lector, publicado);
+
+        mockMvc.perform(get("/api/posts").header(HttpHeaders.AUTHORIZATION, data.bearer("mihawk")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].likedByMe").value(true))
+                .andExpect(jsonPath("$.content[0].own").value(false));
+
+        mockMvc.perform(get("/api/posts"))
+                .andExpect(jsonPath("$.content[0].likedByMe").value(false));
+    }
+
+    @Test
+    @DisplayName("El autor recibe sus posts marcados como propios")
+    void elAutorRecibeSusPostsComoPropios() throws Exception {
+        mockMvc.perform(get("/api/posts/" + publicado.getId())
+                        .header(HttpHeaders.AUTHORIZATION, data.bearer("shanks")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.own").value(true));
+    }
+
+    @Test
+    @DisplayName("El perfil dice si el visitante ya sigue a esa cuenta")
+    void elPerfilIndicaSiYaSeSigue() throws Exception {
+        User seguidor = data.user("yasopp");
+        data.follow(seguidor, autor);
+
+        mockMvc.perform(get("/api/users/shanks").header(HttpHeaders.AUTHORIZATION, data.bearer("yasopp")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.followedByMe").value(true))
+                .andExpect(jsonPath("$.own").value(false));
+
+        mockMvc.perform(get("/api/users/shanks").header(HttpHeaders.AUTHORIZATION, data.bearer("shanks")))
+                .andExpect(jsonPath("$.own").value(true))
+                .andExpect(jsonPath("$.followedByMe").value(false));
+
+        mockMvc.perform(get("/api/users/shanks"))
+                .andExpect(jsonPath("$.followedByMe").value(false));
+    }
+
+    @Test
     @DisplayName("Pedir un post privado por id devuelve 404, sin confirmar que existe")
     void postPrivadoPorIdDevuelve404() throws Exception {
         mockMvc.perform(get("/api/posts/" + privado.getId()))

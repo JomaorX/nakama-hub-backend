@@ -85,6 +85,11 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 - Listados paginados por post, por hilo y por autor
 - Un comentario nunca revela el contenido de un post que el visitante no puede ver
 
+### 🔍 Indexación
+- `GET /sitemap.xml` con la portada, los posts públicos y los perfiles no privados,
+  para que los buscadores no dependan de ir siguiendo enlaces desde la portada
+- Nunca delata borradores, posts privados ni perfiles privados
+
 ### 🔎 Búsqueda
 - `GET /api/search/posts` con filtros por texto, tipo de contenido, serie y categoría,
   respetando siempre la privacidad de quien consulta
@@ -111,6 +116,7 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 - Subida real de imágenes, ahora solo se guardan URLs
 - Verificación por email y recuperación de contraseña
 - Bloqueo de usuarios entre sí
+- Respuestas anidadas en la interfaz, que la API ya soporta
 - Purgado definitivo de las cuentas anonimizadas pasado un plazo de retención
 - Migraciones con Flyway en lugar de `ddl-auto=update`
 

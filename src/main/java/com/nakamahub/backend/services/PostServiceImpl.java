@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -74,7 +75,7 @@ public class PostServiceImpl implements PostService {
         author.setReputationPoints(author.getReputationPoints() + 1);
         userRepository.save(author);
 
-        return postMapper.toDTO(postRepository.save(newPost));
+        return postMapper.toDTO(postRepository.save(newPost), author);
     }
 
     @Override
@@ -115,8 +116,10 @@ public class PostServiceImpl implements PostService {
             post.getImageUrls().addAll(updatePostDTO.getImageUrls());
         }
 
+        post.setEditedAt(LocalDateTime.now());
+
         // Editar no da reputación: si no, bastaría con reescribir un post para farmear puntos.
-        return postMapper.toDTO(post);
+        return postMapper.toDTO(post, post.getAuthor());
     }
 
     @Override
@@ -125,17 +128,17 @@ public class PostServiceImpl implements PostService {
         User viewer = userRepository.findByUsername(viewerUsername)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        return postRepository.findFollowingFeed(viewer.getId(), pageable).map(postMapper::toDTO);
+        return postMapper.toPage(postRepository.findFollowingFeed(viewer.getId(), pageable), viewer);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<PostResponseDTO> getAllPost(Pageable pageable, String viewerUsername) {
-        Long viewerId = userRepository.findByUsername(viewerUsername == null ? "" : viewerUsername)
-                .map(User::getId)
-                .orElse(null);
+        User viewer = viewerUsername == null ? null
+                : userRepository.findByUsername(viewerUsername).orElse(null);
+        Long viewerId = viewer == null ? null : viewer.getId();
 
-        return postRepository.findVisibleFor(viewerId, pageable).map(postMapper::toDTO);
+        return postMapper.toPage(postRepository.findVisibleFor(viewerId, pageable), viewer);
     }
 
     @Override
@@ -153,7 +156,7 @@ public class PostServiceImpl implements PostService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
         }
 
-        PostResponseDTO dto = postMapper.toDTO(post);
+        PostResponseDTO dto = postMapper.toDTO(post, viewer);
 
         if (!isAuthor) {
             postRepository.incrementViewsCount(id);
@@ -188,7 +191,7 @@ public class PostServiceImpl implements PostService {
 
         // Las tres escrituras van en la misma transacción del método, así que un fallo
         // a mitad ya no deja el contador de likes desacompasado de la reputación.
-        return postMapper.toDTO(post);
+        return postMapper.toDTO(post, user);
     }
 
     @Override

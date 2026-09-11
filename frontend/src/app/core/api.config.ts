@@ -14,3 +14,13 @@ export const API_ORIGIN = new InjectionToken<string>('API_ORIGIN', {
   providedIn: 'root',
   factory: () => '',
 });
+
+/**
+ * Origen público del sitio, usado para construir las URL canónicas y las etiquetas
+ * de Open Graph. En el navegador se deduce de la propia página; en el render de
+ * servidor hay que decírselo, porque ahí no existe `location`.
+ */
+export const SITE_ORIGIN = new InjectionToken<string>('SITE_ORIGIN', {
+  providedIn: 'root',
+  factory: () => (typeof location === 'undefined' ? '' : location.origin),
+});

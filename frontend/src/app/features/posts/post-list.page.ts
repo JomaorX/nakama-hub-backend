@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Page } from '../../core/models/page.model';
 import { Post } from '../../core/models/post.model';
 import { PostService } from '../../core/services/post.service';
+import { SeoService } from '../../core/services/seo.service';
 import { errorMessage } from '../../shared/api-error';
 import { PostCard } from '../../shared/post-card';
 import { Spinner } from '../../shared/spinner';
@@ -54,6 +55,7 @@ type Source = 'explore' | 'feed';
 })
 export class PostListPage {
   private readonly postService = inject(PostService);
+  private readonly seo = inject(SeoService);
 
   readonly source = input.required<Source>();
   readonly heading = input.required<string>();
@@ -68,6 +70,17 @@ export class PostListPage {
   private page = 0;
 
   ngOnInit(): void {
+    if (this.source() === 'feed') {
+      // El muro es personal: no tiene sentido que lo indexe nadie.
+      this.seo.noIndex();
+    } else {
+      this.seo.apply({
+        title: this.heading(),
+        description: 'Teorías, reseñas y debates sobre anime, manga y series publicados por la comunidad.',
+        path: '/',
+      });
+    }
+
     this.load();
   }
 

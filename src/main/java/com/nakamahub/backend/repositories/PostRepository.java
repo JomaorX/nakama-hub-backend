@@ -10,7 +10,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 
 public interface PostRepository extends JpaRepository<Post, Long>, PostSearchRepositoryFragment {
 
@@ -76,4 +78,15 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostSearchRep
     @Modifying
     @Query("update Post p set p.viewsCount = p.viewsCount + 1 where p.id = :id")
     void incrementViewsCount(@Param("id") Long id);
+
+    /**
+     * De los posts indicados, cuáles ha marcado ya el usuario.
+     *
+     * Una consulta por página en lugar de inicializar la colección de likes del
+     * usuario, que en una cuenta activa puede tener miles de filas y se cargaría
+     * entera solo para pintar un corazón.
+     */
+    @Query("select p.id from User u join u.likedPosts p where u.id = :userId and p.id in :postIds")
+    Set<Long> findLikedPostIds(@Param("userId") Long userId,
+                               @Param("postIds") Collection<Long> postIds);
 }

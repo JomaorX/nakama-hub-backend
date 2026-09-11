@@ -43,7 +43,9 @@ import { RelativeTimePipe } from './relative-time.pipe';
           }
         </div>
         <div class="stats">
-          <span title="Me gusta">&#9829; {{ post().likesCount }}</span>
+          <span [class.liked]="post().likedByMe" [title]="post().likedByMe ? 'Te gusta' : 'Me gusta'">
+            &#9829; {{ post().likesCount }}
+          </span>
           <span title="Visitas">&#128065; {{ post().viewsCount }}</span>
         </div>
       </footer>
@@ -85,6 +87,7 @@ import { RelativeTimePipe } from './relative-time.pipe';
     .card__foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
     .tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .stats { display: flex; gap: 0.75rem; color: var(--text-dim); font-size: 0.85rem; white-space: nowrap; }
+    .stats .liked { color: var(--accent); }
   `,
 })
 export class PostCard {

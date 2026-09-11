@@ -42,6 +42,7 @@ import { Avatar } from './shared/avatar';
             @if (menuOpen()) {
               <div class="menu" role="menu">
                 <a role="menuitem" [routerLink]="['/u', username()]" (click)="menuOpen.set(false)">Mi perfil</a>
+                <a role="menuitem" routerLink="/ajustes" (click)="menuOpen.set(false)">Ajustes</a>
                 <button role="menuitem" (click)="logout()">Cerrar sesión</button>
               </div>
             }

@@ -2,16 +2,18 @@ import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angu
 import { RouterLink } from '@angular/router';
 import { PublicProfile } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
+import { SeoService } from '../../core/services/seo.service';
 import { UserService } from '../../core/services/user.service';
 import { errorMessage } from '../../shared/api-error';
 import { Avatar } from '../../shared/avatar';
 import { PostCard } from '../../shared/post-card';
+import { ReportButton } from '../../shared/report-button';
 import { Spinner } from '../../shared/spinner';
 
 @Component({
   selector: 'app-profile-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Avatar, PostCard, Spinner, RouterLink],
+  imports: [Avatar, PostCard, Spinner, RouterLink, ReportButton],
   template: `
     @if (loading()) {
       <app-spinner />
@@ -33,13 +35,22 @@ import { Spinner } from '../../shared/spinner';
             </dl>
           </div>
 
-          @if (isLoggedIn() && !isOwnProfile()) {
-            <button class="button" (click)="toggleFollow()" [disabled]="following()">
-              {{ following() ? 'Guardando…' : 'Seguir o dejar de seguir' }}
-            </button>
-          } @else if (isOwnProfile()) {
-            <a class="button button--ghost" routerLink="/publicar">Publicar algo</a>
-          }
+          <div class="profile__actions">
+            @if (user.own) {
+              <a class="button button--ghost" routerLink="/ajustes">Ajustes</a>
+              <a class="button" routerLink="/publicar">Publicar algo</a>
+            } @else if (isLoggedIn()) {
+              <button
+                class="button"
+                [class.button--ghost]="user.followedByMe"
+                (click)="toggleFollow()"
+                [disabled]="following()"
+              >
+                {{ following() ? 'Guardando…' : user.followedByMe ? 'Dejar de seguir' : 'Seguir' }}
+              </button>
+              <app-report-button targetType="USER" [targetId]="user.id" compact />
+            }
+          </div>
         </header>
 
         @if (user.posts === null) {
@@ -71,10 +82,16 @@ import { Spinner } from '../../shared/spinner';
     .profile__stats div { display: grid; gap: 0.1rem; }
     .profile__stats dt { color: var(--text-dim); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .profile__stats dd { margin: 0; font-weight: 700; font-size: 1.05rem; }
-    .profile .button { grid-column: 1 / -1; justify-self: start; }
+    .profile__actions {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
 
     @media (min-width: 640px) {
-      .profile .button { grid-column: auto; justify-self: end; align-self: center; }
+      .profile__actions { grid-column: auto; justify-content: flex-end; align-self: center; }
       .profile { grid-template-columns: auto 1fr auto; }
     }
   `,
@@ -82,6 +99,7 @@ import { Spinner } from '../../shared/spinner';
 export class ProfilePage {
   private readonly userService = inject(UserService);
   private readonly auth = inject(AuthService);
+  private readonly seo = inject(SeoService);
 
   readonly username = input.required<string>();
 
@@ -97,16 +115,21 @@ export class ProfilePage {
       next: (profile) => {
         this.profile.set(profile);
         this.loading.set(false);
+        this.seo.apply({
+          title: profile.username,
+          description:
+            profile.bio ??
+            `Publicaciones de ${profile.username} en Nakama Hub, comunidad de anime, manga y series.`,
+          path: `/u/${profile.username}`,
+          image: profile.avatarUrl,
+        });
       },
       error: (err: unknown) => {
         this.loading.set(false);
         this.error.set(errorMessage(err));
+        this.seo.noIndex();
       },
     });
-  }
-
-  protected isOwnProfile(): boolean {
-    return this.auth.username() === this.username();
   }
 
   protected toggleFollow(): void {

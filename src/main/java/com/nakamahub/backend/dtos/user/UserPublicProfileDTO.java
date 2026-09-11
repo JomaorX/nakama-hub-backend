@@ -23,4 +23,10 @@ public class UserPublicProfileDTO {
     private int postsCount;
 
     private List<PostResponseDTO> posts;
+
+    /** Si quien consulta ya sigue a este usuario. False para visitantes anónimos. */
+    private boolean followedByMe;
+
+    /** Si el perfil es el de quien consulta. */
+    private boolean own;
 }

@@ -19,6 +19,8 @@ export const serverRoutes: ServerRoute[] = [
 
   { path: 'muro', renderMode: RenderMode.Client },
   { path: 'publicar', renderMode: RenderMode.Client },
+  { path: 'post/:id/editar', renderMode: RenderMode.Client },
+  { path: 'ajustes', renderMode: RenderMode.Client },
 
   { path: '**', renderMode: RenderMode.Server },
 ];

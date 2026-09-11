@@ -123,8 +123,11 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
+        // 400 y no 401 a propósito. El usuario está autenticado y su token es válido:
+        // lo que falla es un dato del formulario. Con 401 el cliente entiende que la
+        // sesión ha caducado e intenta refrescarla, que aquí no arregla nada.
         if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "La contraseña actual no es correcta");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña actual no es correcta");
         }
 
         if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword())) {
@@ -214,13 +217,16 @@ public class UserServiceImpl implements UserService {
                     .username(target.getUsername())
                     .avatarUrl(target.getAvatarUrl())
                     .bio(target.getBio())
+                    .followedByMe(isFollower)
+                    .own(isOwner)
                     .build();
         }
 
-        List<PostResponseDTO> visiblePosts = target.getPosts().stream()
-                .filter(post -> postVisibility.isVisibleTo(post, isOwner, isFollower))
-                .map(postMapper::toDTO)
-                .toList();
+        List<PostResponseDTO> visiblePosts = postMapper.toList(
+                target.getPosts().stream()
+                        .filter(post -> postVisibility.isVisibleTo(post, isOwner, isFollower))
+                        .toList(),
+                viewer);
 
         return UserPublicProfileDTO.builder()
                 .id(target.getId())
@@ -231,6 +237,8 @@ public class UserServiceImpl implements UserService {
                 .followingCount(target.getFollowing().size())
                 .postsCount(visiblePosts.size())
                 .posts(visiblePosts)
+                .followedByMe(isFollower)
+                .own(isOwner)
                 .build();
     }
 
@@ -397,7 +405,7 @@ public class UserServiceImpl implements UserService {
                 .followers(user.getFollowers().stream().map(User::getUsername).sorted().toList())
                 .following(user.getFollowing().stream().map(User::getUsername).sorted().toList())
                 .likedPostTitles(user.getLikedPosts().stream().map(Post::getTitle).sorted().toList())
-                .posts(user.getPosts().stream().map(postMapper::toDTO).toList())
+                .posts(postMapper.toList(user.getPosts(), user))
                 .comments(commentRepository.findByAuthorIdOrderByCreatedAtDesc(user.getId()).stream()
                         .map(commentMapper::toDTO).toList())
                 .build();
@@ -438,7 +446,7 @@ public class UserServiceImpl implements UserService {
                 .followingCount(user.getFollowing().size())
                 .reputationPoints(user.getReputationPoints())
                 .postsCount(user.getPosts().size())
-                .posts(user.getPosts().stream().map(postMapper::toDTO).toList())
+                .posts(postMapper.toList(user.getPosts(), user))
                 .build();
     }
 }

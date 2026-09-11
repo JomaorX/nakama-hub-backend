@@ -37,11 +37,12 @@ public class SearchServiceImpl implements SearchService {
     @Override
     public Page<PostResponseDTO> searchPosts(String text, ContentType contentType, String serieName,
                                              String category, Pageable pageable, String viewerUsername) {
-        Long viewerId = viewerUsername == null ? null
-                : userRepository.findByUsername(viewerUsername).map(User::getId).orElse(null);
+        User viewer = viewerUsername == null ? null
+                : userRepository.findByUsername(viewerUsername).orElse(null);
+        Long viewerId = viewer == null ? null : viewer.getId();
 
-        return postRepository.search(viewerId, text, contentType, serieName, category, pageable)
-                .map(postMapper::toDTO);
+        return postMapper.toPage(
+                postRepository.search(viewerId, text, contentType, serieName, category, pageable), viewer);
     }
 
     @Override

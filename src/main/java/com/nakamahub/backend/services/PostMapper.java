@@ -3,26 +3,54 @@ package com.nakamahub.backend.services;
 import com.nakamahub.backend.dtos.post.PostResponseDTO;
 import com.nakamahub.backend.models.Category;
 import com.nakamahub.backend.models.Post;
+import com.nakamahub.backend.models.User;
+import com.nakamahub.backend.repositories.PostRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class PostMapper {
 
-    /** Margen para absorber la diferencia entre las dos marcas de tiempo del alta. */
-    static final Duration EDIT_THRESHOLD = Duration.ofSeconds(1);
+    private final PostRepository postRepository;
 
-    static boolean isEdited(LocalDateTime createdAt, LocalDateTime updatedAt) {
-        if (createdAt == null || updatedAt == null) {
-            return false;
-        }
-        return Duration.between(createdAt, updatedAt).compareTo(EDIT_THRESHOLD) > 0;
+    public PostMapper(PostRepository postRepository) {
+        this.postRepository = postRepository;
     }
 
+    /** Sin visitante: para respuestas donde no hay sesión o no importa el estado personal. */
     public PostResponseDTO toDTO(Post post) {
+        return toDTO(post, null, Set.of());
+    }
+
+    public PostResponseDTO toDTO(Post post, User viewer) {
+        return toDTO(post, viewer, likedIds(viewer, List.of(post)));
+    }
+
+    /**
+     * Convierte una página resolviendo de una sola vez qué posts ha marcado el
+     * visitante, en lugar de preguntarlo uno a uno.
+     */
+    public Page<PostResponseDTO> toPage(Page<Post> posts, User viewer) {
+        Set<Long> liked = likedIds(viewer, posts.getContent());
+        return posts.map(post -> toDTO(post, viewer, liked));
+    }
+
+    public List<PostResponseDTO> toList(List<Post> posts, User viewer) {
+        Set<Long> liked = likedIds(viewer, posts);
+        return posts.stream().map(post -> toDTO(post, viewer, liked)).toList();
+    }
+
+    private Set<Long> likedIds(User viewer, List<Post> posts) {
+        if (viewer == null || posts.isEmpty()) {
+            return Set.of();
+        }
+        return postRepository.findLikedPostIds(viewer.getId(), posts.stream().map(Post::getId).toList());
+    }
+
+    private PostResponseDTO toDTO(Post post, User viewer, Set<Long> likedPostIds) {
         return PostResponseDTO.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -40,7 +68,9 @@ public class PostMapper {
                 .likesCount(post.getLikesCount())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
-                .edited(isEdited(post.getCreatedAt(), post.getUpdatedAt()))
+                .edited(post.getEditedAt() != null)
+                .likedByMe(likedPostIds.contains(post.getId()))
+                .own(viewer != null && post.getAuthor().equals(viewer))
                 .build();
     }
 }

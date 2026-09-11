@@ -104,10 +104,10 @@ class SessionLifecycleTest {
     }
 
     @Test
-    @DisplayName("Cambiar la contraseña exige acertar la actual")
+    @DisplayName("Errar la contraseña actual da 400, no 401, para que el cliente no crea que caducó la sesión")
     void cambiarContrasenaExigeLaActual() throws Exception {
         mockMvc.perform(cambioDeContrasena("jinbe", "NoEsLaMia1", "NuevaClave1"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isBadRequest());
     }
 
     @Test

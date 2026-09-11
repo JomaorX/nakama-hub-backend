@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ContentType, PostPayload, PostStatus, PrivacyLevel } from '../../core/models/post.model';
 import { PostService } from '../../core/services/post.service';
+import { SeoService } from '../../core/services/seo.service';
 import { SearchService } from '../../core/services/search.service';
 import { errorMessage, fieldErrors } from '../../shared/api-error';
+import { Spinner } from '../../shared/spinner';
 
 /** Categorías que precarga el backend en CategoryInitializer. */
 const CATEGORIES = [
@@ -16,14 +18,19 @@ const CATEGORIES = [
 @Component({
   selector: 'app-post-editor-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Spinner],
   template: `
     <section class="stack narrow">
       <header class="page-head">
-        <h1>Nueva publicación</h1>
-        <p class="page-head__sub">Comparte una teoría, una reseña o lo que se te ocurra</p>
+        <h1>{{ isEditing() ? 'Editar publicación' : 'Nueva publicación' }}</h1>
+        <p class="page-head__sub">
+          {{ isEditing() ? 'Los cambios se ven al momento' : 'Comparte una teoría, una reseña o lo que se te ocurra' }}
+        </p>
       </header>
 
+      @if (loading()) {
+        <app-spinner />
+      } @else {
       <form class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <label>
           <span>Título</span>
@@ -103,9 +110,10 @@ const CATEGORIES = [
         }
 
         <button type="submit" [disabled]="submitting() || form.invalid || !selected().length">
-          {{ submitting() ? 'Guardando…' : 'Publicar' }}
+          {{ submitting() ? 'Guardando…' : isEditing() ? 'Guardar cambios' : 'Publicar' }}
         </button>
       </form>
+      }
     </section>
   `,
   styles: `
@@ -132,6 +140,13 @@ export class PostEditorPage {
   private readonly postService = inject(PostService);
   private readonly searchService = inject(SearchService);
   private readonly router = inject(Router);
+  private readonly seo = inject(SeoService);
+
+  /** Presente al editar un post existente, ausente al crear uno nuevo. */
+  readonly id = input<string | undefined>();
+
+  protected readonly isEditing = computed(() => this.id() !== undefined);
+  protected readonly loading = signal(false);
 
   protected readonly categories = CATEGORIES;
   protected readonly series = signal<string[]>([]);
@@ -150,9 +165,37 @@ export class PostEditorPage {
   });
 
   ngOnInit(): void {
+    // El editor no debe indexarse: es una pantalla privada.
+    this.seo.noIndex();
+
     this.searchService.series('', 0, 50).subscribe({
       next: (page) => this.series.set(page.content.map((serie) => serie.name)),
       error: () => this.series.set([]),
+    });
+
+    const postId = this.id();
+    if (postId === undefined) {
+      return;
+    }
+
+    this.loading.set(true);
+    this.postService.byId(Number(postId)).subscribe({
+      next: (post) => {
+        this.form.setValue({
+          title: post.title,
+          content: post.content,
+          serieName: post.serieName ?? '',
+          contentType: post.contentType,
+          status: post.status,
+          privacy: post.privacy,
+        });
+        this.selected.set([...post.categories]);
+        this.loading.set(false);
+      },
+      error: (err: unknown) => {
+        this.loading.set(false);
+        this.error.set(errorMessage(err));
+      },
     });
   }
 
@@ -198,7 +241,12 @@ export class PostEditorPage {
       categories: this.selected(),
     };
 
-    this.postService.create(payload).subscribe({
+    const postId = this.id();
+    const request = postId === undefined
+      ? this.postService.create(payload)
+      : this.postService.update(Number(postId), payload);
+
+    request.subscribe({
       next: (post) => void this.router.navigate(['/post', post.id]),
       error: (err: unknown) => {
         this.submitting.set(false);

@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+
 @Service
 @Transactional
 public class CommentServiceImpl implements CommentService {
@@ -109,9 +111,8 @@ public class CommentServiceImpl implements CommentService {
         }
 
         comment.setContent(updateCommentDTO.getContent());
+        comment.setEditedAt(LocalDateTime.now());
 
-        // updatedAt lo actualiza @UpdateTimestamp, así que el cliente puede distinguir
-        // un comentario editado comparándolo con createdAt.
         return commentMapper.toDTO(comment);
     }
 

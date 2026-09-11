@@ -47,6 +47,9 @@ public class Comment {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    /** Momento de la última edición del autor, null si nunca se ha editado. Ver Post.editedAt. */
+    private LocalDateTime editedAt;
+
     // Autor del comentario
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
