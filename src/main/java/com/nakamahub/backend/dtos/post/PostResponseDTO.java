@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @AllArgsConstructor
@@ -39,4 +40,9 @@ public class PostResponseDTO {
     private int viewsCount;
 
     private int likesCount;
+
+    private LocalDateTime createdAt;
+
+    /** Distinto de createdAt cuando el post se ha editado. */
+    private LocalDateTime updatedAt;
 }

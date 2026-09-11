@@ -40,14 +40,16 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 - Las cuentas suspendidas quedan bloqueadas en el filtro de seguridad
 
 ### 📝 Posts
-- Publicación con tipo de contenido `ANIME`, `MANGA`, `SERIE` o `GENERAL`
+- Publicación y edición con tipo de contenido `ANIME`, `MANGA`, `SERIE` o `GENERAL`
 - Estados `DRAFT`, `PUBLISHED` y `ARCHIVED`
 - Visibilidad `PUBLIC`, `FOLLOWERS_ONLY` y `PRIVATE`, aplicada tanto en el feed
   como al pedir un post por su identificador
 - Categorías, asociación a serie, likes y contador de visitas
+- Timeline personal en `GET /api/posts/feed` con lo que publican las cuentas
+  seguidas, más lo propio
 
 ### 💬 Comentarios
-- Hilos con respuestas anidadas
+- Hilos con respuestas anidadas, con edición por parte del autor
 - Listados paginados por post, por hilo y por autor
 - Un comentario nunca revela el contenido de un post que el visitante no puede ver
 
@@ -66,8 +68,7 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 
 ## 🧭 Pendiente
 
-- Edición de posts y comentarios
-- Timeline de los usuarios seguidos y buscador
+- Buscador de posts, series y usuarios
 - Subida real de imágenes, ahora solo se guardan URLs
 - Verificación por email, recuperación de contraseña y refresh token
 - Reporte y bloqueo de usuarios

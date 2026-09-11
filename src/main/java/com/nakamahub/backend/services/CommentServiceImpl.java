@@ -2,6 +2,7 @@ package com.nakamahub.backend.services;
 
 import com.nakamahub.backend.dtos.comment.CommentResponseDTO;
 import com.nakamahub.backend.dtos.comment.CreateCommentDTO;
+import com.nakamahub.backend.dtos.comment.UpdateCommentDTO;
 import com.nakamahub.backend.models.Comment;
 import com.nakamahub.backend.models.Post;
 import com.nakamahub.backend.models.User;
@@ -96,6 +97,22 @@ public class CommentServiceImpl implements CommentService {
         Long viewerId = viewer == null ? null : viewer.getId();
 
         return commentRepository.findVisibleByAuthorId(authorId, viewerId, pageable).map(commentMapper::toDTO);
+    }
+
+    @Override
+    public CommentResponseDTO updateComment(Long commentId, UpdateCommentDTO updateCommentDTO, String authorUsername) {
+        Comment comment = commentRepository.findWithAuthorById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario no encontrado"));
+
+        if (!comment.getAuthor().getUsername().equals(authorUsername)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes editar este comentario");
+        }
+
+        comment.setContent(updateCommentDTO.getContent());
+
+        // updatedAt lo actualiza @UpdateTimestamp, así que el cliente puede distinguir
+        // un comentario editado comparándolo con createdAt.
+        return commentMapper.toDTO(comment);
     }
 
     @Override

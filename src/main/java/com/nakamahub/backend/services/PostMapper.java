@@ -26,6 +26,8 @@ public class PostMapper {
                 .privacy(post.getPrivacy())
                 .viewsCount(post.getViewsCount())
                 .likesCount(post.getLikesCount())
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
                 .build();
     }
 }

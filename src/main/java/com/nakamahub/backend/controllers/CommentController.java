@@ -2,6 +2,7 @@ package com.nakamahub.backend.controllers;
 
 import com.nakamahub.backend.dtos.comment.CommentResponseDTO;
 import com.nakamahub.backend.dtos.comment.CreateCommentDTO;
+import com.nakamahub.backend.dtos.comment.UpdateCommentDTO;
 import com.nakamahub.backend.security.SecurityUtils;
 import com.nakamahub.backend.services.CommentService;
 import jakarta.validation.Valid;
@@ -61,6 +62,12 @@ public class CommentController {
     ) {
         return commentService.getCommentsByUser(authorId, pageable(page, size, Sort.Direction.DESC),
                 SecurityUtils.currentUsername().orElse(null));
+    }
+
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public CommentResponseDTO updateComment(@PathVariable Long id, @Valid @RequestBody UpdateCommentDTO body) {
+        return commentService.updateComment(id, body, SecurityUtils.requireCurrentUsername());
     }
 
     @DeleteMapping("/{id}")

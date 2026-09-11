@@ -2,6 +2,7 @@ package com.nakamahub.backend.controllers;
 
 import com.nakamahub.backend.dtos.post.CreatePostDTO;
 import com.nakamahub.backend.dtos.post.PostResponseDTO;
+import com.nakamahub.backend.dtos.post.UpdatePostDTO;
 import com.nakamahub.backend.security.SecurityUtils;
 import com.nakamahub.backend.services.PostService;
 import jakarta.validation.Valid;
@@ -35,6 +36,17 @@ public class PostController {
         return postService.getAllPost(pageable, SecurityUtils.currentUsername().orElse(null));
     }
 
+    /** Timeline del usuario: lo que publican las cuentas que sigue, más lo suyo. */
+    @GetMapping("/feed")
+    @ResponseStatus(HttpStatus.OK)
+    public Page<PostResponseDTO> getFollowingFeed(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(Math.max(0, page), clampSize(size), Sort.by("createdAt").descending());
+        return postService.getFollowingFeed(pageable, SecurityUtils.requireCurrentUsername());
+    }
+
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public PostResponseDTO getPostById(@PathVariable Long id) {
@@ -45,6 +57,12 @@ public class PostController {
     @ResponseStatus(HttpStatus.CREATED)
     public PostResponseDTO createPost(@Valid @RequestBody CreatePostDTO body) {
         return postService.createPost(body, SecurityUtils.requireCurrentUsername());
+    }
+
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public PostResponseDTO updatePost(@PathVariable Long id, @Valid @RequestBody UpdatePostDTO body) {
+        return postService.updatePost(id, body, SecurityUtils.requireCurrentUsername());
     }
 
     @PostMapping("/{id}/like")

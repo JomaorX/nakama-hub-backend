@@ -67,6 +67,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/*/authority").hasAnyAuthority(ROLES_STAFF)
                         .requestMatchers(HttpMethod.DELETE, "/api/comments/*/authority").hasAnyAuthority(ROLES_STAFF)
 
+                        // El timeline es personal, así que va antes que la lectura pública de posts.
+                        .requestMatchers(HttpMethod.GET, "/api/posts/feed").hasAnyAuthority(ROLES_AUTHENTICATED)
+
                         // Lectura pública
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll()
@@ -76,6 +79,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/users/*/follow").hasAnyAuthority(ROLES_AUTHENTICATED)
                         .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyAuthority(ROLES_AUTHENTICATED)
                         .requestMatchers(HttpMethod.POST, "/api/comments/**").hasAnyAuthority(ROLES_AUTHENTICATED)
+                        .requestMatchers(HttpMethod.PUT, "/api/posts/*").hasAnyAuthority(ROLES_AUTHENTICATED)
+                        .requestMatchers(HttpMethod.PUT, "/api/comments/*").hasAnyAuthority(ROLES_AUTHENTICATED)
 
                         .anyRequest().authenticated()
                 )

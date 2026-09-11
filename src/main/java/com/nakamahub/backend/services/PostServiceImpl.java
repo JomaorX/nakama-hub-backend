@@ -2,6 +2,7 @@ package com.nakamahub.backend.services;
 
 import com.nakamahub.backend.dtos.post.CreatePostDTO;
 import com.nakamahub.backend.dtos.post.PostResponseDTO;
+import com.nakamahub.backend.dtos.post.UpdatePostDTO;
 import com.nakamahub.backend.models.*;
 import com.nakamahub.backend.repositories.CategoryRepository;
 import com.nakamahub.backend.repositories.PostRepository;
@@ -48,26 +49,8 @@ public class PostServiceImpl implements PostService {
         User author = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        ContentType type = createPostDTO.getContentType();
-        String serieName = createPostDTO.getSerieName();
-        boolean hasSerieName = serieName != null && !serieName.isBlank();
-
-        Serie postSerie = null;
-        if (hasSerieName) {
-            postSerie = serieRepository.findByName(serieName)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serie no encontrada"));
-        }
-
-        // Validaciones de tipo de contenido según presencia de serie
-        if (postSerie != null) {
-            if (type == null || type == ContentType.GENERAL) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Si hay serie, el tipo de contenido debe ser ANIME, MANGA o SERIE");
-            }
-        } else if (type != ContentType.GENERAL) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Si no hay serie, el tipo de contenido debe ser GENERAL");
-        }
+        Serie postSerie = resolveSerie(createPostDTO.getSerieName());
+        requireCoherentContentType(createPostDTO.getContentType(), postSerie);
 
         // Título duplicado para el mismo autor
         if (postRepository.existsByTitleAndAuthor(createPostDTO.getTitle(), author)) {
@@ -77,7 +60,7 @@ public class PostServiceImpl implements PostService {
         Post newPost = new Post();
         newPost.setTitle(createPostDTO.getTitle());
         newPost.setContent(createPostDTO.getContent());
-        newPost.setContentType(type);
+        newPost.setContentType(createPostDTO.getContentType());
         newPost.setStatus(createPostDTO.getStatus() != null ? createPostDTO.getStatus() : PostStatus.DRAFT);
         newPost.setPrivacy(createPostDTO.getPrivacy() != null ? createPostDTO.getPrivacy() : PrivacyLevel.PUBLIC);
         newPost.setSerie(postSerie);
@@ -92,6 +75,57 @@ public class PostServiceImpl implements PostService {
         userRepository.save(author);
 
         return postMapper.toDTO(postRepository.save(newPost));
+    }
+
+    @Override
+    public PostResponseDTO updatePost(Long id, UpdatePostDTO updatePostDTO, String username) {
+        Post post = postRepository.findWithAuthorById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
+
+        if (!post.getAuthor().getUsername().equals(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes editar este post");
+        }
+
+        Serie postSerie = resolveSerie(updatePostDTO.getSerieName());
+        requireCoherentContentType(updatePostDTO.getContentType(), postSerie);
+
+        // Se excluye el propio post de la comprobación, si no editarlo sin cambiar el
+        // título chocaría siempre contra la restricción de unicidad por autor.
+        if (postRepository.existsByTitleAndAuthorAndIdNot(updatePostDTO.getTitle(), post.getAuthor(), post.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya posees otro Post con ese título");
+        }
+
+        post.setTitle(updatePostDTO.getTitle());
+        post.setContent(updatePostDTO.getContent());
+        post.setContentType(updatePostDTO.getContentType());
+        post.setSerie(postSerie);
+        post.setCategories(resolveCategories(updatePostDTO.getCategories()));
+
+        if (updatePostDTO.getStatus() != null) {
+            post.setStatus(updatePostDTO.getStatus());
+        }
+        if (updatePostDTO.getPrivacy() != null) {
+            post.setPrivacy(updatePostDTO.getPrivacy());
+        }
+
+        // Se reemplaza el contenido de la colección en lugar de sustituirla, porque
+        // Hibernate no admite que se le cambie la referencia de una colección gestionada.
+        post.getImageUrls().clear();
+        if (updatePostDTO.getImageUrls() != null) {
+            post.getImageUrls().addAll(updatePostDTO.getImageUrls());
+        }
+
+        // Editar no da reputación: si no, bastaría con reescribir un post para farmear puntos.
+        return postMapper.toDTO(post);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PostResponseDTO> getFollowingFeed(Pageable pageable, String viewerUsername) {
+        User viewer = userRepository.findByUsername(viewerUsername)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        return postRepository.findFollowingFeed(viewer.getId(), pageable).map(postMapper::toDTO);
     }
 
     @Override
@@ -174,6 +208,27 @@ public class PostServiceImpl implements PostService {
         Post targetPost = postRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
         postRepository.delete(targetPost);
+    }
+
+    private Serie resolveSerie(String serieName) {
+        if (serieName == null || serieName.isBlank()) {
+            return null;
+        }
+        return serieRepository.findByName(serieName)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serie no encontrada"));
+    }
+
+    /** Un post asociado a una serie no puede ser GENERAL, y uno sin serie tiene que serlo. */
+    private void requireCoherentContentType(ContentType type, Serie serie) {
+        if (serie != null) {
+            if (type == null || type == ContentType.GENERAL) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Si hay serie, el tipo de contenido debe ser ANIME, MANGA o SERIE");
+            }
+        } else if (type != ContentType.GENERAL) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Si no hay serie, el tipo de contenido debe ser GENERAL");
+        }
     }
 
     private Set<Category> resolveCategories(List<String> categoryNames) {
