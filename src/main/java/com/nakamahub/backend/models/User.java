@@ -67,6 +67,11 @@ public class User {
     @Builder.Default
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
+    /** Igual que los de refresco: solo cascada de borrado, sin orphanRemoval. */
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    @Builder.Default
+    private List<OneTimeToken> oneTimeTokens = new ArrayList<>();
+
     private String bio;
 
     private String avatarUrl;
@@ -124,6 +129,16 @@ public class User {
 
     /** Momento en que la cuenta se anonimizó. Null mientras la cuenta sigue viva. */
     private LocalDateTime deletedAt;
+
+    /**
+     * Si el dueño ha confirmado que la dirección es suya.
+     *
+     * Sin verificar, un correo escrito con una errata deja la cuenta sin forma de
+     * recuperarla, y uno ajeno permite registrarse en nombre de otra persona.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
 
     /**
      * Identidad por clave primaria.

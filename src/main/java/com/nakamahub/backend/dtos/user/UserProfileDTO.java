@@ -20,6 +20,9 @@ public class UserProfileDTO {
     private String avatarUrl;
     private String role;
 
+    /** Si la dirección de correo está confirmada. */
+    private boolean emailVerified;
+
     private int followersCount;
     private int followingCount;
     private int postsCount;

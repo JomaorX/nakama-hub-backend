@@ -45,6 +45,12 @@ public class UserServiceImpl implements UserService {
     BlockService blockService;
 
     @Autowired
+    AccountMailService accountMailService;
+
+    @Autowired
+    OneTimeTokenService oneTimeTokenService;
+
+    @Autowired
     PostMapper postMapper;
 
     @Autowired
@@ -71,6 +77,7 @@ public class UserServiceImpl implements UserService {
         newUser.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
 
         User savedUser = userRepository.save(newUser);
+        accountMailService.sendVerification(savedUser);
 
         return SignupResponseDTO.builder()
                 .id(savedUser.getId())
@@ -144,6 +151,53 @@ public class UserServiceImpl implements UserService {
         // Si la contraseña se cambia porque la cuenta estaba comprometida, dejar vivas
         // las sesiones anteriores no serviría de nada.
         refreshTokenService.revokeAllFor(user);
+    }
+
+    @Override
+    public void requestPasswordReset(String email) {
+        // Siempre responde igual exista o no la cuenta. Decir "ese correo no está
+        // registrado" convierte el formulario en un comprobador de direcciones.
+        userRepository.findByEmail(email)
+                .filter(user -> user.getStatus() == AccountStatus.ACTIVE)
+                .ifPresent(accountMailService::sendPasswordReset);
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        User user = oneTimeTokenService.consume(token, TokenPurpose.RESTABLECER_PASSWORD);
+
+        if (user.getStatus() != AccountStatus.ACTIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tu cuenta ya no está activa");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        // Quien restablece la contraseña suele hacerlo porque teme que le hayan
+        // entrado, así que se cierran todas las sesiones abiertas.
+        refreshTokenService.revokeAllFor(user);
+
+        // Recibir el correo demuestra que la dirección es suya.
+        user.setEmailVerified(true);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void verifyEmail(String token) {
+        User user = oneTimeTokenService.consume(token, TokenPurpose.VERIFICACION_EMAIL);
+        user.setEmailVerified(true);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void resendVerification(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        if (user.isEmailVerified()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tu dirección ya está verificada");
+        }
+
+        accountMailService.sendVerification(user);
     }
 
     private LoginResponseDTO issueSession(User user) {
@@ -458,6 +512,7 @@ public class UserServiceImpl implements UserService {
                 .bio(user.getBio())
                 .avatarUrl(user.getAvatarUrl())
                 .role(String.valueOf(user.getRole()))
+                .emailVerified(user.isEmailVerified())
                 .followersCount(user.getFollowers().size())
                 .followingCount(user.getFollowing().size())
                 .reputationPoints(user.getReputationPoints())

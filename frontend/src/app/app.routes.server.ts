@@ -16,6 +16,11 @@ export const serverRoutes: ServerRoute[] = [
 
   { path: 'entrar', renderMode: RenderMode.Prerender },
   { path: 'registro', renderMode: RenderMode.Prerender },
+  { path: 'recuperar', renderMode: RenderMode.Prerender },
+
+  // Llevan el token en la URL, así que se resuelven en cliente y no se prerenderizan.
+  { path: 'restablecer', renderMode: RenderMode.Client },
+  { path: 'verificar', renderMode: RenderMode.Client },
 
   { path: 'muro', renderMode: RenderMode.Client },
   { path: 'publicar', renderMode: RenderMode.Client },

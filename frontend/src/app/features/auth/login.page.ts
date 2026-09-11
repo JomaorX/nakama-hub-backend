@@ -15,6 +15,9 @@ import { errorMessage } from '../../shared/api-error';
       @if (sessionExpired()) {
         <p class="notice">Tu sesión ha caducado. Vuelve a entrar para continuar.</p>
       }
+      @if (passwordReset()) {
+        <p class="notice">Contraseña cambiada. Entra con la nueva.</p>
+      }
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <label>
@@ -36,6 +39,7 @@ import { errorMessage } from '../../shared/api-error';
         </button>
       </form>
 
+      <p class="switch"><a routerLink="/recuperar">He olvidado mi contraseña</a></p>
       <p class="switch">¿Todavía no tienes cuenta? <a routerLink="/registro">Créala aquí</a></p>
     </section>
   `,
@@ -59,6 +63,9 @@ export class LoginPage {
   protected readonly error = signal<string | null>(null);
   protected readonly sessionExpired = signal(
     this.route.snapshot.queryParamMap.get('expirada') === 'true',
+  );
+  protected readonly passwordReset = signal(
+    this.route.snapshot.queryParamMap.get('restablecida') === 'true',
   );
 
   protected readonly form = inject(FormBuilder).nonNullable.group({

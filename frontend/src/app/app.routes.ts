@@ -50,6 +50,23 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login.page').then((m) => m.LoginPage),
   },
   {
+    path: 'recuperar',
+    title: 'Recuperar la cuenta · Nakama Hub',
+    loadComponent: () =>
+      import('./features/auth/forgot-password.page').then((m) => m.ForgotPasswordPage),
+  },
+  {
+    path: 'restablecer',
+    title: 'Elegir contraseña nueva · Nakama Hub',
+    loadComponent: () =>
+      import('./features/auth/reset-password.page').then((m) => m.ResetPasswordPage),
+  },
+  {
+    path: 'verificar',
+    title: 'Confirmar la cuenta · Nakama Hub',
+    loadComponent: () => import('./features/auth/verify-email.page').then((m) => m.VerifyEmailPage),
+  },
+  {
     path: 'registro',
     title: 'Crear cuenta · Nakama Hub',
     loadComponent: () => import('./features/auth/signup.page').then((m) => m.SignupPage),

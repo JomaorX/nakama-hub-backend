@@ -46,6 +46,22 @@ export class AuthService {
     }
   }
 
+  requestPasswordReset(email: string): Observable<void> {
+    return this.http.post<void>('/auth/password/forgot', { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<void> {
+    return this.http.post<void>('/auth/password/reset', { token, newPassword });
+  }
+
+  verifyEmail(token: string): Observable<void> {
+    return this.http.post<void>('/auth/verify', { token });
+  }
+
+  resendVerification(): Observable<void> {
+    return this.http.post<void>('/api/users/me/verify/resend', {});
+  }
+
   startSession(session: Session): void {
     this.storage.save(session);
     this.currentUsername.set(session.username);

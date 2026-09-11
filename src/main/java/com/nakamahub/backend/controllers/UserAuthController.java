@@ -2,7 +2,10 @@ package com.nakamahub.backend.controllers;
 
 import com.nakamahub.backend.dtos.auth.LoginResponseDTO;
 import com.nakamahub.backend.dtos.auth.LoginUserDTO;
+import com.nakamahub.backend.dtos.auth.ForgotPasswordDTO;
 import com.nakamahub.backend.dtos.auth.RefreshTokenRequestDTO;
+import com.nakamahub.backend.dtos.auth.ResetPasswordDTO;
+import com.nakamahub.backend.dtos.auth.TokenRequestDTO;
 import com.nakamahub.backend.dtos.auth.SignupResponseDTO;
 import com.nakamahub.backend.dtos.user.CreateUserDTO;
 import com.nakamahub.backend.security.LoginAttemptPolicy;
@@ -59,6 +62,31 @@ public class UserAuthController {
     @ResponseStatus(HttpStatus.OK)
     public LoginResponseDTO refresh(@Valid @RequestBody RefreshTokenRequestDTO dto) {
         return userService.refreshSession(dto.getRefreshToken());
+    }
+
+    /**
+     * Pide el enlace de restablecimiento. Devuelve 204 exista o no la cuenta: si
+     * distinguiera, el formulario serviría para averiguar qué correos están dados
+     * de alta.
+     */
+    @PostMapping("/password/forgot")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordDTO dto, HttpServletRequest request) {
+        attemptPolicy.checkPasswordReset(dto.getEmail(), request);
+        attemptPolicy.recordPasswordReset(dto.getEmail(), request);
+        userService.requestPasswordReset(dto.getEmail());
+    }
+
+    @PostMapping("/password/reset")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
+        userService.resetPassword(dto.getToken(), dto.getNewPassword());
+    }
+
+    @PostMapping("/verify")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void verifyEmail(@Valid @RequestBody TokenRequestDTO dto) {
+        userService.verifyEmail(dto.getToken());
     }
 
     @PostMapping("/logout")

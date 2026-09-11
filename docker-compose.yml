@@ -38,6 +38,11 @@ services:
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
       # Caddy fija X-Forwarded-For, así que aquí sí se puede confiar en ella.
       FORWARD_HEADERS_STRATEGY: framework
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-no-responder@nakamahub.example}
 
   frontend:
     build: ./frontend

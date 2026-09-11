@@ -8,6 +8,8 @@ export interface UserProfile {
   bio: string | null;
   avatarUrl: string | null;
   role: string;
+  /** Si la dirección de correo está confirmada. */
+  emailVerified: boolean;
   followersCount: number;
   followingCount: number;
   postsCount: number;

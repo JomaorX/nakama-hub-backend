@@ -22,6 +22,13 @@ public class LoginAttemptPolicy {
     static final int MAX_PER_ADDRESS = 25;
     static final int MAX_SIGNUPS_PER_ADDRESS = 10;
 
+    /**
+     * Cada petición manda un correo. Sin límite, el formulario sirve para inundar
+     * el buzón de cualquiera cuya dirección se conozca.
+     */
+    static final int MAX_RESETS_PER_ACCOUNT = 3;
+    static final int MAX_RESETS_PER_ADDRESS = 10;
+
     private final AttemptLimiter limiter;
 
     public LoginAttemptPolicy(AttemptLimiter limiter) {
@@ -43,6 +50,16 @@ public class LoginAttemptPolicy {
         limiter.reset(addressKey(request));
     }
 
+    public void checkPasswordReset(String email, HttpServletRequest request) {
+        limiter.check(resetKey(email), MAX_RESETS_PER_ACCOUNT, WINDOW);
+        limiter.check(resetAddressKey(request), MAX_RESETS_PER_ADDRESS, WINDOW);
+    }
+
+    public void recordPasswordReset(String email, HttpServletRequest request) {
+        limiter.recordFailure(resetKey(email), WINDOW);
+        limiter.recordFailure(resetAddressKey(request), WINDOW);
+    }
+
     public void checkSignup(HttpServletRequest request) {
         limiter.check(signupKey(request), MAX_SIGNUPS_PER_ADDRESS, WINDOW);
     }
@@ -58,6 +75,14 @@ public class LoginAttemptPolicy {
 
     private String addressKey(HttpServletRequest request) {
         return "login:ip:" + request.getRemoteAddr();
+    }
+
+    private String resetKey(String email) {
+        return "reset:cuenta:" + (email == null ? "" : email.toLowerCase(Locale.ROOT));
+    }
+
+    private String resetAddressKey(HttpServletRequest request) {
+        return "reset:ip:" + request.getRemoteAddr();
     }
 
     private String signupKey(HttpServletRequest request) {

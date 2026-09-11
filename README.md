@@ -39,6 +39,8 @@ cd frontend && npm install && npm start                 # web en :4200
 ```
 
 El perfil `dev` usa una base de datos en memoria que se vacía al parar el proceso.
+Sin credenciales SMTP los correos se escriben en el log en lugar de enviarse, así
+que el enlace de verificación o de recuperación se copia desde la consola.
 Contra MySQL de verdad:
 
 ```bash
@@ -68,6 +70,7 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 - Rotación en cada refresco con detección de reutilización: si reaparece un token
   ya gastado se revocan todas las sesiones del usuario
 - Cierre de sesión y cambio de contraseña, que invalida las sesiones abiertas
+- Verificación de la dirección de correo y recuperación de contraseña por enlace
 - Límite de intentos por cuenta y por dirección, con `Retry-After` en la respuesta
 - Roles: `USER`, `MODERATOR`, `ADMIN`
 - Las cuentas suspendidas quedan bloqueadas en el filtro de seguridad
@@ -122,7 +125,6 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 
 ## 🧭 Pendiente
 - Subida real de imágenes, ahora solo se guardan URLs
-- Verificación por email y recuperación de contraseña
 - Purgado definitivo de las cuentas anonimizadas pasado un plazo de retención
 - Migraciones con Flyway en lugar de `ddl-auto=update`
 

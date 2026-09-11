@@ -98,6 +98,12 @@ public class UserController {
         userService.changePassword(SecurityUtils.requireCurrentUsername(), dto);
     }
 
+    @PostMapping("/me/verify/resend")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resendVerification() {
+        userService.resendVerification(SecurityUtils.requireCurrentUsername());
+    }
+
     @GetMapping("/me/export")
     @ResponseStatus(HttpStatus.OK)
     public UserDataExportDTO exportMyData() {

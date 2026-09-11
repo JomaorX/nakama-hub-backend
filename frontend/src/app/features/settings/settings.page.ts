@@ -23,6 +23,19 @@ import { Spinner } from '../../shared/spinner';
       @if (loading()) {
         <app-spinner />
       } @else if (profile(); as me) {
+        @if (!me.emailVerified) {
+          <section class="panel panel--warn stack">
+            <h2>Confirma tu dirección de correo</h2>
+            <p class="muted">
+              Te enviamos un enlace a {{ me.email }} al crear la cuenta. Hasta que lo
+              abras no podremos ayudarte a recuperar el acceso si pierdes la contraseña.
+            </p>
+            <button type="button" class="button button--ghost button--small" (click)="resendVerification()">
+              {{ verificationSent() ? 'Enlace enviado' : 'Enviar el enlace otra vez' }}
+            </button>
+          </section>
+        }
+
         <section class="panel stack">
           <h2>Perfil</h2>
           <form class="stack" [formGroup]="profileForm" (ngSubmit)="saveProfile()" novalidate>
@@ -136,6 +149,7 @@ import { Spinner } from '../../shared/spinner';
       padding: 1.2rem 1.3rem;
     }
     .panel--danger { border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+    .panel--warn { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
     .panel h2 { margin: 0; font-size: 1.05rem; }
     .panel button[type='submit'], .panel .button { justify-self: start; }
     .ok { color: var(--text-dim); font-size: 0.88rem; margin: 0; }
@@ -165,6 +179,7 @@ export class SettingsPage {
 
   protected readonly deleteError = signal<string | null>(null);
   protected readonly blocked = signal<UserSearchResult[]>([]);
+  protected readonly verificationSent = signal(false);
 
   protected readonly profileForm = this.formBuilder.nonNullable.group({
     bio: ['', [Validators.minLength(4), Validators.maxLength(120)]],
@@ -194,6 +209,13 @@ export class SettingsPage {
     this.userService.blockedUsers().subscribe({
       next: (users) => this.blocked.set(users),
       error: () => this.blocked.set([]),
+    });
+  }
+
+  protected resendVerification(): void {
+    this.auth.resendVerification().subscribe({
+      next: () => this.verificationSent.set(true),
+      error: (err: unknown) => this.profileError.set(errorMessage(err)),
     });
   }
 
