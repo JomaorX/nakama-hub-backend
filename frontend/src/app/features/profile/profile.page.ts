@@ -40,13 +40,23 @@ import { Spinner } from '../../shared/spinner';
               <a class="button button--ghost" routerLink="/ajustes">Ajustes</a>
               <a class="button" routerLink="/publicar">Publicar algo</a>
             } @else if (isLoggedIn()) {
+              @if (!user.blockedByMe) {
+                <button
+                  class="button"
+                  [class.button--ghost]="user.followedByMe"
+                  (click)="toggleFollow()"
+                  [disabled]="following()"
+                >
+                  {{ following() ? 'Guardando…' : user.followedByMe ? 'Dejar de seguir' : 'Seguir' }}
+                </button>
+              }
               <button
-                class="button"
-                [class.button--ghost]="user.followedByMe"
-                (click)="toggleFollow()"
-                [disabled]="following()"
+                class="button button--ghost"
+                (click)="toggleBlock()"
+                [disabled]="blocking()"
+                [title]="user.blockedByMe ? 'Volver a ver a esta cuenta' : 'Dejar de ver a esta cuenta'"
               >
-                {{ following() ? 'Guardando…' : user.followedByMe ? 'Dejar de seguir' : 'Seguir' }}
+                {{ blocking() ? 'Guardando…' : user.blockedByMe ? 'Desbloquear' : 'Bloquear' }}
               </button>
               <app-report-button targetType="USER" [targetId]="user.id" compact />
             }
@@ -107,6 +117,7 @@ export class ProfilePage {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly following = signal(false);
+  protected readonly blocking = signal(false);
 
   protected readonly isLoggedIn = this.auth.isLoggedIn;
 
@@ -128,6 +139,24 @@ export class ProfilePage {
         this.loading.set(false);
         this.error.set(errorMessage(err));
         this.seo.noIndex();
+      },
+    });
+  }
+
+  protected toggleBlock(): void {
+    if (this.blocking()) {
+      return;
+    }
+
+    this.blocking.set(true);
+    this.userService.toggleBlock(this.username()).subscribe({
+      next: (updated) => {
+        this.profile.set(updated);
+        this.blocking.set(false);
+      },
+      error: (err: unknown) => {
+        this.blocking.set(false);
+        this.error.set(errorMessage(err));
       },
     });
   }

@@ -65,6 +65,10 @@ public class PostSearchRepositoryFragmentImpl implements PostSearchRepositoryFra
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(visibleTo(builder, query, post, viewerId));
 
+        if (viewerId != null) {
+            predicates.add(builder.not(builder.exists(blockedWithAuthor(builder, query, post, viewerId))));
+        }
+
         if (text != null && !text.isBlank()) {
             // LIKE con comodín por delante no puede usar un índice. Para el tamaño de una
             // comunidad pequeña es suficiente; el paso siguiente sería un índice FULLTEXT.
@@ -90,6 +94,25 @@ public class PostSearchRepositoryFragmentImpl implements PostSearchRepositoryFra
         }
 
         return predicates.toArray(new Predicate[0]);
+    }
+
+    /**
+     * Bloqueo en cualquiera de los dos sentidos. Mismo criterio que
+     * BlockQueries.NOT_BLOCKED_WITH_POST_AUTHOR, expresado aquí con la API de criterios.
+     */
+    private Subquery<Long> blockedWithAuthor(CriteriaBuilder builder, CriteriaQuery<?> query,
+                                             Root<Post> post, Long viewerId) {
+        Subquery<Long> blocks = query.subquery(Long.class);
+        Root<User> blocker = blocks.from(User.class);
+        Join<User, User> blocked = blocker.join("blockedUsers");
+
+        Path<Object> authorId = post.get("author").get("id");
+
+        return blocks.select(builder.literal(1L)).where(builder.or(
+                builder.and(builder.equal(blocker.get("id"), viewerId),
+                            builder.equal(blocked.get("id"), authorId)),
+                builder.and(builder.equal(blocker.get("id"), authorId),
+                            builder.equal(blocked.get("id"), viewerId))));
     }
 
     /** Mismas reglas que PostRepository.findVisibleFor y que PostVisibility. */

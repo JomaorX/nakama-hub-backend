@@ -1,17 +1,18 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { UserProfile } from '../../core/models/user.model';
+import { UserProfile, UserSearchResult } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
 import { SeoService } from '../../core/services/seo.service';
 import { UserService } from '../../core/services/user.service';
 import { errorMessage } from '../../shared/api-error';
+import { Avatar } from '../../shared/avatar';
 import { Spinner } from '../../shared/spinner';
 
 @Component({
   selector: 'app-settings-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, Spinner],
+  imports: [ReactiveFormsModule, Spinner, Avatar],
   template: `
     <section class="stack narrow">
       <header class="page-head">
@@ -74,6 +75,29 @@ import { Spinner } from '../../shared/spinner';
         </section>
 
         <section class="panel stack">
+          <h2>Cuentas bloqueadas</h2>
+          @if (blocked().length) {
+            <ul class="blocked">
+              @for (user of blocked(); track user.id) {
+                <li>
+                  <app-avatar [username]="user.username" [url]="user.avatarUrl" [size]="32" />
+                  <span>{{ user.username }}</span>
+                  <button type="button" class="button button--ghost button--small" (click)="unblock(user.username)">
+                    Desbloquear
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="muted">No has bloqueado a nadie.</p>
+          }
+          <p class="muted">
+            Al bloquear a alguien dejáis de veros las publicaciones y los comentarios, y
+            ninguno de los dos puede seguir al otro.
+          </p>
+        </section>
+
+        <section class="panel stack">
           <h2>Tus datos</h2>
           <p class="muted">
             Puedes descargar todo lo que guardamos sobre ti: perfil, publicaciones, comentarios,
@@ -115,6 +139,10 @@ import { Spinner } from '../../shared/spinner';
     .panel h2 { margin: 0; font-size: 1.05rem; }
     .panel button[type='submit'], .panel .button { justify-self: start; }
     .ok { color: var(--text-dim); font-size: 0.88rem; margin: 0; }
+
+    .blocked { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+    .blocked li { display: flex; align-items: center; gap: 0.6rem; }
+    .blocked li span { font-weight: 600; margin-right: auto; }
   `,
 })
 export class SettingsPage {
@@ -136,6 +164,7 @@ export class SettingsPage {
   protected readonly passwordError = signal<string | null>(null);
 
   protected readonly deleteError = signal<string | null>(null);
+  protected readonly blocked = signal<UserSearchResult[]>([]);
 
   protected readonly profileForm = this.formBuilder.nonNullable.group({
     bio: ['', [Validators.minLength(4), Validators.maxLength(120)]],
@@ -160,6 +189,18 @@ export class SettingsPage {
         this.loading.set(false);
         this.loadError.set(errorMessage(err));
       },
+    });
+
+    this.userService.blockedUsers().subscribe({
+      next: (users) => this.blocked.set(users),
+      error: () => this.blocked.set([]),
+    });
+  }
+
+  protected unblock(username: string): void {
+    this.userService.toggleBlock(username).subscribe({
+      next: () => this.blocked.update((list) => list.filter((user) => user.username !== username)),
+      error: (err: unknown) => this.profileError.set(errorMessage(err)),
     });
   }
 

@@ -87,6 +87,23 @@ public class User {
     @Builder.Default
     private Set<User> following = new HashSet<>();
 
+    /**
+     * Cuentas que este usuario ha bloqueado.
+     *
+     * El bloqueo es unilateral en la tabla pero simétrico en sus efectos: basta con
+     * que exista la fila en un sentido para que los dos dejen de verse. Guardarlo en
+     * un solo sentido permite además saber quién bloqueó a quién, que hace falta para
+     * que el bloqueador pueda deshacerlo.
+     */
+    @ManyToMany
+    @JoinTable(
+            name = "user_blocks",
+            joinColumns = @JoinColumn(name = "blocker_id"),
+            inverseJoinColumns = @JoinColumn(name = "blocked_id")
+    )
+    @Builder.Default
+    private Set<User> blockedUsers = new HashSet<>();
+
     @ManyToMany
     @JoinTable(
             name = "user_likes",

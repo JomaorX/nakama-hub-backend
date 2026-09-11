@@ -26,17 +26,20 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final PostVisibility postVisibility;
+    private final BlockService blockService;
     private final CommentMapper commentMapper;
 
     public CommentServiceImpl(UserRepository userRepository,
                               CommentRepository commentRepository,
                               PostRepository postRepository,
                               PostVisibility postVisibility,
+                              BlockService blockService,
                               CommentMapper commentMapper) {
         this.userRepository = userRepository;
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.postVisibility = postVisibility;
+        this.blockService = blockService;
         this.commentMapper = commentMapper;
     }
 
@@ -77,9 +80,11 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public Page<CommentResponseDTO> getCommentsByPost(Long postId, Pageable pageable, String viewerUsername) {
+        User viewer = findViewer(viewerUsername);
         requireVisiblePost(postId, viewerUsername);
+
         return commentMapper.toPage(
-                commentRepository.findByPostIdAndParentIdIsNull(postId, pageable), findViewer(viewerUsername));
+                commentRepository.findThreadStarters(postId, idOf(viewer), pageable), viewer);
     }
 
     @Override
@@ -91,17 +96,16 @@ public class CommentServiceImpl implements CommentService {
         User viewer = findViewer(viewerUsername);
         requireVisible(parent.getPost(), viewer);
 
-        return commentMapper.toPage(commentRepository.findByParentId(parentId, pageable), viewer);
+        return commentMapper.toPage(commentRepository.findReplies(parentId, idOf(viewer), pageable), viewer);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<CommentResponseDTO> getCommentsByUser(Long authorId, Pageable pageable, String viewerUsername) {
         User viewer = findViewer(viewerUsername);
-        Long viewerId = viewer == null ? null : viewer.getId();
 
         return commentMapper.toPage(
-                commentRepository.findVisibleByAuthorId(authorId, viewerId, pageable), viewer);
+                commentRepository.findVisibleByAuthorId(authorId, idOf(viewer), pageable), viewer);
     }
 
     @Override
@@ -138,6 +142,10 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.delete(targetComment);
     }
 
+    private Long idOf(User user) {
+        return user == null ? null : user.getId();
+    }
+
     private User findViewer(String viewerUsername) {
         return viewerUsername == null ? null
                 : userRepository.findByUsername(viewerUsername).orElse(null);
@@ -151,7 +159,8 @@ public class CommentServiceImpl implements CommentService {
 
     /** Mismo 404 que un post inexistente: un 403 confirmaría que el post existe. */
     private void requireVisible(Post post, User viewer) {
-        if (!postVisibility.isVisibleTo(post, viewer)) {
+        if (!postVisibility.isVisibleTo(post, viewer)
+                || blockService.blockedBetween(viewer, post.getAuthor())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
         }
     }

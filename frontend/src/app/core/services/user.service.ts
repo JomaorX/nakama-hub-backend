@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { PublicProfile, UserProfile } from '../models/user.model';
+import { PublicProfile, UserProfile, UserSearchResult } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
@@ -25,6 +25,18 @@ export class UserService {
 
   updateAvatar(avatarUrl: string): Observable<UserProfile> {
     return this.http.put<UserProfile>('/api/users/me/avatar', { avatarUrl });
+  }
+
+  /**
+   * Bloquea o desbloquea. Al bloquear, el perfil deja de estar disponible para el
+   * bloqueado, pero quien bloquea sigue viéndolo para poder deshacerlo.
+   */
+  toggleBlock(username: string): Observable<PublicProfile> {
+    return this.http.put<PublicProfile>(`/api/users/${username}/block`, {});
+  }
+
+  blockedUsers(): Observable<UserSearchResult[]> {
+    return this.http.get<UserSearchResult[]>('/api/users/me/blocked');
   }
 
   updatePrivacy(privacy: 'PUBLIC' | 'PRIVATE'): Observable<UserProfile> {

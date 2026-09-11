@@ -97,6 +97,12 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
   respetando siempre la privacidad de quien consulta
 - `GET /api/search/users` y `GET /api/search/series`
 
+### 🚫 Bloqueo
+- Bloqueo entre usuarios, con efecto simétrico: ninguno ve las publicaciones ni
+  los comentarios del otro, y no pueden seguirse
+- Bloquear deshace el seguimiento en ambos sentidos
+- Lista de cuentas bloqueadas en los ajustes
+
 ### 👤 Perfiles
 - Perfil público y privado, seguimiento entre usuarios y puntos de reputación
 - Edición de nombre de usuario, email, biografía, avatar y privacidad
@@ -117,7 +123,6 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 ## 🧭 Pendiente
 - Subida real de imágenes, ahora solo se guardan URLs
 - Verificación por email y recuperación de contraseña
-- Bloqueo de usuarios entre sí
 - Purgado definitivo de las cuentas anonimizadas pasado un plazo de retención
 - Migraciones con Flyway en lugar de `ddl-auto=update`
 

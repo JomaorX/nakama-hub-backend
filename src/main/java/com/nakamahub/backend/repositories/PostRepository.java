@@ -26,23 +26,23 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostSearchRep
      * que cualquiera, incluso sin autenticar, leía los borradores y los posts privados
      * de todo el mundo.
      *
-     * Con viewerId a null las tres comparaciones contra el parámetro dan desconocido,
-     * que en SQL no es cierto, así que un anónimo solo ve lo publicado y público.
+     * Con viewerId a null las comparaciones contra el parámetro dan desconocido, que
+     * en SQL no es cierto, así que un anónimo solo ve lo publicado y público.
      */
     @EntityGraph(attributePaths = {"author", "serie"})
     @Query("""
             select p
             from Post p
-            where p.author.id = :viewerId
-               or (p.status = com.nakamahub.backend.models.PostStatus.PUBLISHED
-                   and (p.privacy = com.nakamahub.backend.models.PrivacyLevel.PUBLIC
-                        or (p.privacy = com.nakamahub.backend.models.PrivacyLevel.FOLLOWERS_ONLY
-                            and exists (select 1
-                                        from User author
-                                        join author.followers follower
-                                        where author.id = p.author.id
-                                          and follower.id = :viewerId))))
-            """)
+            where (p.author.id = :viewerId
+                   or (p.status = com.nakamahub.backend.models.PostStatus.PUBLISHED
+                       and (p.privacy = com.nakamahub.backend.models.PrivacyLevel.PUBLIC
+                            or (p.privacy = com.nakamahub.backend.models.PrivacyLevel.FOLLOWERS_ONLY
+                                and exists (select 1
+                                            from User author
+                                            join author.followers follower
+                                            where author.id = p.author.id
+                                              and follower.id = :viewerId)))))
+              and """ + BlockQueries.NOT_BLOCKED_WITH_POST_AUTHOR)
     Page<Post> findVisibleFor(@Param("viewerId") Long viewerId, Pageable pageable);
 
     /**
@@ -65,7 +65,7 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostSearchRep
                               join author.followers follower
                               where author.id = p.author.id
                                 and follower.id = :viewerId))
-            """)
+              and """ + BlockQueries.NOT_BLOCKED_WITH_POST_AUTHOR)
     Page<Post> findFollowingFeed(@Param("viewerId") Long viewerId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"author", "serie"})

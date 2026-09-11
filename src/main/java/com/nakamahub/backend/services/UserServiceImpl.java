@@ -42,6 +42,9 @@ public class UserServiceImpl implements UserService {
     PostVisibility postVisibility;
 
     @Autowired
+    BlockService blockService;
+
+    @Autowired
     PostMapper postMapper;
 
     @Autowired
@@ -166,6 +169,12 @@ public class UserServiceImpl implements UserService {
         User target = userRepository.findByUsername(targetUsername)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario objetivo no encontrado"));
 
+        // Mismo 404 que un usuario inexistente: quien está bloqueado no tiene por qué
+        // enterarse de que lo está.
+        if (blockService.blockedBetween(follower, target)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
+
         if (target.getFollowers().contains(follower)) {
             // Unfollow
             target.getFollowers().remove(follower);
@@ -207,6 +216,12 @@ public class UserServiceImpl implements UserService {
         User viewer = viewerUsername == null ? null
                 : userRepository.findByUsername(viewerUsername).orElse(null);
 
+        // Quien ha sido bloqueado no ve el perfil del que le bloqueó. Al revés sí,
+        // porque hace falta para poder deshacer el bloqueo desde el propio perfil.
+        if (viewer != null && target.getBlockedUsers().contains(viewer)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
+
         boolean isOwner = viewer != null && target.equals(viewer);
         boolean isFollower = viewer != null && target.getFollowers().contains(viewer);
 
@@ -239,6 +254,7 @@ public class UserServiceImpl implements UserService {
                 .posts(visiblePosts)
                 .followedByMe(isFollower)
                 .own(isOwner)
+                .blockedByMe(viewer != null && viewer.getBlockedUsers().contains(target))
                 .build();
     }
 

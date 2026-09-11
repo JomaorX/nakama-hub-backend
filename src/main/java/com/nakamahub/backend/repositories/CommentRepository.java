@@ -13,14 +13,34 @@ import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
+    /** Comentarios de primer nivel de un post, sin los de cuentas bloqueadas. */
     @EntityGraph(attributePaths = {"author", "post"})
-    Page<Comment> findByPostIdAndParentIdIsNull(Long postId, Pageable pageable);
+    @Query("""
+            select c
+            from Comment c
+            where c.post.id = :postId
+              and c.parent is null
+              and """ + BlockQueries.NOT_BLOCKED_WITH_COMMENT_AUTHOR)
+    Page<Comment> findThreadStarters(@Param("postId") Long postId,
+                                     @Param("viewerId") Long viewerId,
+                                     Pageable pageable);
 
     @EntityGraph(attributePaths = {"author", "post"})
-    Page<Comment> findByParentId(Long parentId, Pageable pageable);
+    @Query("""
+            select c
+            from Comment c
+            where c.parent.id = :parentId
+              and """ + BlockQueries.NOT_BLOCKED_WITH_COMMENT_AUTHOR)
+    Page<Comment> findReplies(@Param("parentId") Long parentId,
+                              @Param("viewerId") Long viewerId,
+                              Pageable pageable);
 
     @EntityGraph(attributePaths = {"author", "post", "parent"})
     Optional<Comment> findWithAuthorById(Long id);
+
+    /** Todos los comentarios del usuario, sin filtros: solo para su propia exportación de datos. */
+    @EntityGraph(attributePaths = {"author", "post", "parent"})
+    List<Comment> findByAuthorIdOrderByCreatedAtDesc(Long authorId);
 
     /**
      * Número de respuestas de cada comentario indicado, en una sola consulta.
@@ -29,10 +49,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      */
     @Query("select c.parent.id, count(c) from Comment c where c.parent.id in :parentIds group by c.parent.id")
     List<Object[]> countRepliesFor(@Param("parentIds") List<Long> parentIds);
-
-    /** Todos los comentarios del usuario, sin filtro de visibilidad: solo para su propia exportación de datos. */
-    @EntityGraph(attributePaths = {"author", "post", "parent"})
-    List<Comment> findByAuthorIdOrderByCreatedAtDesc(Long authorId);
 
     /**
      * Comentarios de un autor, limitados a los posts que el visitante puede ver.
@@ -54,7 +70,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
                                             join postAuthor.followers follower
                                             where postAuthor.id = p.author.id
                                               and follower.id = :viewerId)))))
-            """)
+              and """ + BlockQueries.NOT_BLOCKED_WITH_COMMENT_AUTHOR)
     Page<Comment> findVisibleByAuthorId(@Param("authorId") Long authorId,
                                         @Param("viewerId") Long viewerId,
                                         Pageable pageable);

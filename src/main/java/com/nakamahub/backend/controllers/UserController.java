@@ -2,19 +2,25 @@ package com.nakamahub.backend.controllers;
 
 import com.nakamahub.backend.dtos.user.*;
 import com.nakamahub.backend.security.SecurityUtils;
+import com.nakamahub.backend.dtos.search.UserSearchResultDTO;
+import com.nakamahub.backend.services.BlockService;
 import com.nakamahub.backend.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
+    private final BlockService blockService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, BlockService blockService) {
         this.userService = userService;
+        this.blockService = blockService;
     }
 
     @GetMapping("/me")
@@ -66,6 +72,24 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public UserProfileDTO updatePrivacy(@Valid @RequestBody UpdatePrivacyDTO dto) {
         return userService.updatePrivacy(SecurityUtils.requireCurrentUsername(), dto.getPrivacy());
+    }
+
+    /**
+     * Bloquea o desbloquea a otra cuenta. Devuelve el perfil actualizado, salvo al
+     * bloquear: a partir de ese momento deja de haber perfil que enseñar.
+     */
+    @PutMapping("/{username}/block")
+    @ResponseStatus(HttpStatus.OK)
+    public UserPublicProfileDTO toggleBlock(@PathVariable String username) {
+        String blocker = SecurityUtils.requireCurrentUsername();
+        blockService.toggleBlock(blocker, username);
+        return userService.getProfile(username, blocker);
+    }
+
+    @GetMapping("/me/blocked")
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserSearchResultDTO> listBlocked() {
+        return blockService.listBlocked(SecurityUtils.requireCurrentUsername());
     }
 
     @PutMapping("/me/password")

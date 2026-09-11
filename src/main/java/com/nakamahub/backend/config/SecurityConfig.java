@@ -83,6 +83,7 @@ public class SecurityConfig {
 
                         // Escritura autenticada
                         .requestMatchers(HttpMethod.PUT, "/api/users/*/follow").hasAnyAuthority(ROLES_AUTHENTICATED)
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/block").hasAnyAuthority(ROLES_AUTHENTICATED)
                         .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyAuthority(ROLES_AUTHENTICATED)
                         .requestMatchers(HttpMethod.POST, "/api/comments/**").hasAnyAuthority(ROLES_AUTHENTICATED)
                         .requestMatchers(HttpMethod.POST, "/api/reports").hasAnyAuthority(ROLES_AUTHENTICATED)

@@ -28,6 +28,8 @@ export interface PublicProfile {
   followedByMe: boolean;
   /** Si el perfil es el de quien consulta. */
   own: boolean;
+  /** Si quien consulta ha bloqueado a esta cuenta. */
+  blockedByMe: boolean;
 }
 
 export interface UserSearchResult {

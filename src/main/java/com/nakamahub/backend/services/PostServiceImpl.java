@@ -29,6 +29,7 @@ public class PostServiceImpl implements PostService {
     private final CategoryRepository categoryRepository;
     private final SerieRepository serieRepository;
     private final PostVisibility postVisibility;
+    private final BlockService blockService;
     private final PostMapper postMapper;
 
     public PostServiceImpl(PostRepository postRepository,
@@ -36,12 +37,14 @@ public class PostServiceImpl implements PostService {
                            CategoryRepository categoryRepository,
                            SerieRepository serieRepository,
                            PostVisibility postVisibility,
+                           BlockService blockService,
                            PostMapper postMapper) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.serieRepository = serieRepository;
         this.postVisibility = postVisibility;
+        this.blockService = blockService;
         this.postMapper = postMapper;
     }
 
@@ -151,7 +154,7 @@ public class PostServiceImpl implements PostService {
 
         boolean isAuthor = viewer != null && post.getAuthor().equals(viewer);
 
-        if (!postVisibility.isVisibleTo(post, viewer)) {
+        if (!postVisibility.isVisibleTo(post, viewer) || blockService.blockedBetween(viewer, post.getAuthor())) {
             // Mismo 404 que un post inexistente: un 403 confirmaría que el post existe.
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
         }
@@ -174,7 +177,7 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findWithAuthorById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
 
-        if (!postVisibility.isVisibleTo(post, user)) {
+        if (!postVisibility.isVisibleTo(post, user) || blockService.blockedBetween(user, post.getAuthor())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
         }
 

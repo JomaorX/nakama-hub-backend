@@ -96,6 +96,14 @@ public class TestDataFactory {
     }
 
     @Transactional
+    public void block(User blocker, User target) {
+        User managedBlocker = userRepository.findById(blocker.getId()).orElseThrow();
+        User managedTarget = userRepository.findById(target.getId()).orElseThrow();
+        managedBlocker.getBlockedUsers().add(managedTarget);
+        userRepository.save(managedBlocker);
+    }
+
+    @Transactional
     public void like(User user, Post post) {
         User managedUser = userRepository.findById(user.getId()).orElseThrow();
         Post managedPost = postRepository.findById(post.getId()).orElseThrow();

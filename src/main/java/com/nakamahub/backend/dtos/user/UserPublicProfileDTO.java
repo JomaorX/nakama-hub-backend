@@ -29,4 +29,7 @@ public class UserPublicProfileDTO {
 
     /** Si el perfil es el de quien consulta. */
     private boolean own;
+
+    /** Si quien consulta ha bloqueado a este usuario. */
+    private boolean blockedByMe;
 }
