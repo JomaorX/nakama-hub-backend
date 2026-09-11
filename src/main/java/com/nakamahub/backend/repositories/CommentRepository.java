@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
@@ -20,6 +21,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     @EntityGraph(attributePaths = {"author", "post", "parent"})
     Optional<Comment> findWithAuthorById(Long id);
+
+    /** Todos los comentarios del usuario, sin filtro de visibilidad: solo para su propia exportación de datos. */
+    @EntityGraph(attributePaths = {"author", "post", "parent"})
+    List<Comment> findByAuthorIdOrderByCreatedAtDesc(Long authorId);
 
     /**
      * Comentarios de un autor, limitados a los posts que el visitante puede ver.

@@ -23,15 +23,18 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final PostVisibility postVisibility;
+    private final CommentMapper commentMapper;
 
     public CommentServiceImpl(UserRepository userRepository,
                               CommentRepository commentRepository,
                               PostRepository postRepository,
-                              PostVisibility postVisibility) {
+                              PostVisibility postVisibility,
+                              CommentMapper commentMapper) {
         this.userRepository = userRepository;
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.postVisibility = postVisibility;
+        this.commentMapper = commentMapper;
     }
 
     @Override
@@ -65,14 +68,14 @@ public class CommentServiceImpl implements CommentService {
 
         author.setReputationPoints(author.getReputationPoints() + 1);
 
-        return mapToDTO(commentRepository.save(newComment));
+        return commentMapper.toDTO(commentRepository.save(newComment));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<CommentResponseDTO> getCommentsByPost(Long postId, Pageable pageable, String viewerUsername) {
         requireVisiblePost(postId, viewerUsername);
-        return commentRepository.findByPostIdAndParentIdIsNull(postId, pageable).map(this::mapToDTO);
+        return commentRepository.findByPostIdAndParentIdIsNull(postId, pageable).map(commentMapper::toDTO);
     }
 
     @Override
@@ -83,7 +86,7 @@ public class CommentServiceImpl implements CommentService {
 
         requireVisible(parent.getPost(), findViewer(viewerUsername));
 
-        return commentRepository.findByParentId(parentId, pageable).map(this::mapToDTO);
+        return commentRepository.findByParentId(parentId, pageable).map(commentMapper::toDTO);
     }
 
     @Override
@@ -92,7 +95,7 @@ public class CommentServiceImpl implements CommentService {
         User viewer = findViewer(viewerUsername);
         Long viewerId = viewer == null ? null : viewer.getId();
 
-        return commentRepository.findVisibleByAuthorId(authorId, viewerId, pageable).map(this::mapToDTO);
+        return commentRepository.findVisibleByAuthorId(authorId, viewerId, pageable).map(commentMapper::toDTO);
     }
 
     @Override
@@ -130,17 +133,5 @@ public class CommentServiceImpl implements CommentService {
         if (!postVisibility.isVisibleTo(post, viewer)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
         }
-    }
-
-    private CommentResponseDTO mapToDTO(Comment comment) {
-        return CommentResponseDTO.builder()
-                .id(comment.getId())
-                .content(comment.getContent())
-                .postId(comment.getPost().getId())
-                .authorUsername(comment.getAuthor().getUsername())
-                .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
-                .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt())
-                .build();
     }
 }

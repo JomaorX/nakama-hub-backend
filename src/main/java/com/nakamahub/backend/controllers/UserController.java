@@ -68,6 +68,13 @@ public class UserController {
         return userService.updatePrivacy(SecurityUtils.requireCurrentUsername(), dto.getPrivacy());
     }
 
+    @GetMapping("/me/export")
+    @ResponseStatus(HttpStatus.OK)
+    public UserDataExportDTO exportMyData() {
+        return userService.exportMyData(SecurityUtils.requireCurrentUsername());
+    }
+
+    /** Borrado lógico con anonimización: los datos personales se eliminan y la cuenta no vuelve a usarse. */
     @DeleteMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAccount() {

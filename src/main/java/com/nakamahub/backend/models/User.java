@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +48,16 @@ public class User {
     @Builder.Default
     private List<Post> posts = new ArrayList<>();
 
+    /**
+     * Esta relación faltaba. Comment.author es nullable = false y nadie la cascadeaba,
+     * así que borrar una cuenta que hubiera comentado en posts de otros violaba la
+     * clave foránea. El borrado de cuentas es ahora lógico, pero dejar el grafo
+     * completo hace que un purgado real también funcione.
+     */
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Comment> comments = new ArrayList<>();
+
     private String bio;
 
     private String avatarUrl;
@@ -84,6 +95,9 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private AccountStatus status = AccountStatus.ACTIVE;
+
+    /** Momento en que la cuenta se anonimizó. Null mientras la cuenta sigue viva. */
+    private LocalDateTime deletedAt;
 
     /**
      * Identidad por clave primaria.

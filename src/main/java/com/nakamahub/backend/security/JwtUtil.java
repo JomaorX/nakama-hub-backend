@@ -26,6 +26,16 @@ public class JwtUtil {
 
     public static final String ROLE_CLAIM = "role";
 
+    /**
+     * Identificador estable del usuario.
+     *
+     * El sujeto del token es el nombre de usuario, que se puede cambiar desde el
+     * perfil. Sin este claim, un token emitido antes de un cambio de nombre apunta a
+     * un usuario que ya no existe, y si alguien registra después el nombre liberado
+     * ese token pasa a identificar a otra persona.
+     */
+    public static final String USER_ID_CLAIM = "uid";
+
     private final String secret;
     private final long expirationMillis;
 
@@ -60,10 +70,11 @@ public class JwtUtil {
         this.verifier = JWT.require(algorithm).build();
     }
 
-    public String generateToken(String username, String role) {
+    public String generateToken(Long userId, String username, String role) {
         Instant now = Instant.now();
         return JWT.create()
                 .withSubject(username)
+                .withClaim(USER_ID_CLAIM, userId)
                 .withClaim(ROLE_CLAIM, role)
                 .withIssuedAt(Date.from(now))
                 .withExpiresAt(Date.from(now.plusMillis(expirationMillis)))

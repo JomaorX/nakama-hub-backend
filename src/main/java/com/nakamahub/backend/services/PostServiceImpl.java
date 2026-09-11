@@ -27,17 +27,20 @@ public class PostServiceImpl implements PostService {
     private final CategoryRepository categoryRepository;
     private final SerieRepository serieRepository;
     private final PostVisibility postVisibility;
+    private final PostMapper postMapper;
 
     public PostServiceImpl(PostRepository postRepository,
                            UserRepository userRepository,
                            CategoryRepository categoryRepository,
                            SerieRepository serieRepository,
-                           PostVisibility postVisibility) {
+                           PostVisibility postVisibility,
+                           PostMapper postMapper) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.serieRepository = serieRepository;
         this.postVisibility = postVisibility;
+        this.postMapper = postMapper;
     }
 
     @Override
@@ -88,7 +91,7 @@ public class PostServiceImpl implements PostService {
         author.setReputationPoints(author.getReputationPoints() + 1);
         userRepository.save(author);
 
-        return toDTO(postRepository.save(newPost));
+        return postMapper.toDTO(postRepository.save(newPost));
     }
 
     @Override
@@ -98,7 +101,7 @@ public class PostServiceImpl implements PostService {
                 .map(User::getId)
                 .orElse(null);
 
-        return postRepository.findVisibleFor(viewerId, pageable).map(this::toDTO);
+        return postRepository.findVisibleFor(viewerId, pageable).map(postMapper::toDTO);
     }
 
     @Override
@@ -116,7 +119,7 @@ public class PostServiceImpl implements PostService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
         }
 
-        PostResponseDTO dto = toDTO(post);
+        PostResponseDTO dto = postMapper.toDTO(post);
 
         if (!isAuthor) {
             postRepository.incrementViewsCount(id);
@@ -151,7 +154,7 @@ public class PostServiceImpl implements PostService {
 
         // Las tres escrituras van en la misma transacción del método, así que un fallo
         // a mitad ya no deja el contador de likes desacompasado de la reputación.
-        return toDTO(post);
+        return postMapper.toDTO(post);
     }
 
     @Override
@@ -182,24 +185,5 @@ public class PostServiceImpl implements PostService {
                         .orElseThrow(() -> new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST, "Categoría no válida: " + name)))
                 .collect(Collectors.toSet());
-    }
-
-    private PostResponseDTO toDTO(Post post) {
-        return PostResponseDTO.builder()
-                .id(post.getId())
-                .title(post.getTitle())
-                .content(post.getContent())
-                .categories(post.getCategories().stream().map(Category::getName).toList())
-                .authorUsername(post.getAuthor().getUsername())
-                .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
-                .contentType(post.getContentType())
-                // Copia defensiva: getImageUrls devuelve la colección perezosa de Hibernate,
-                // que ya no se puede inicializar cuando Jackson serializa fuera de la transacción.
-                .imageUrls(List.copyOf(post.getImageUrls()))
-                .status(post.getStatus())
-                .privacy(post.getPrivacy())
-                .viewsCount(post.getViewsCount())
-                .likesCount(post.getLikesCount())
-                .build();
     }
 }

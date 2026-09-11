@@ -5,7 +5,6 @@ import com.nakamahub.backend.models.PostStatus;
 import com.nakamahub.backend.models.PrivacyLevel;
 import com.nakamahub.backend.models.User;
 import com.nakamahub.backend.models.UserRole;
-import com.nakamahub.backend.security.JwtUtil;
 import com.nakamahub.backend.support.IntegrationTest;
 import com.nakamahub.backend.support.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,9 +30,6 @@ class PostVisibilityTest {
 
     @Autowired
     TestDataFactory data;
-
-    @Autowired
-    JwtUtil jwtUtil;
 
     private User autor;
     private Post publicado;
@@ -64,7 +60,7 @@ class PostVisibilityTest {
     @DisplayName("El autor ve sus propios borradores y privados en el feed")
     void autorVeSusPropiosPosts() throws Exception {
         mockMvc.perform(get("/api/posts")
-                        .header(HttpHeaders.AUTHORIZATION, bearer("shanks")))
+                        .header(HttpHeaders.AUTHORIZATION, data.bearer("shanks")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(4)));
     }
@@ -75,7 +71,7 @@ class PostVisibilityTest {
         data.user("mihawk");
 
         mockMvc.perform(get("/api/posts")
-                        .header(HttpHeaders.AUTHORIZATION, bearer("mihawk")))
+                        .header(HttpHeaders.AUTHORIZATION, data.bearer("mihawk")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[*].title", contains("Publicado")));
@@ -88,7 +84,7 @@ class PostVisibilityTest {
         data.follow(seguidor, autor);
 
         mockMvc.perform(get("/api/posts")
-                        .header(HttpHeaders.AUTHORIZATION, bearer("yasopp")))
+                        .header(HttpHeaders.AUTHORIZATION, data.bearer("yasopp")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(2)));
     }
@@ -130,9 +126,5 @@ class PostVisibilityTest {
                 .andExpect(jsonPath("$.username").value("shanks"))
                 .andExpect(jsonPath("$.posts", hasSize(1)))
                 .andExpect(jsonPath("$.postsCount").value(1));
-    }
-
-    private String bearer(String username) {
-        return "Bearer " + jwtUtil.generateToken(username, UserRole.ROLE_USER.name());
     }
 }

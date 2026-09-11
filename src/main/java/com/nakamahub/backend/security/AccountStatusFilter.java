@@ -18,8 +18,11 @@ import java.io.IOException;
 import java.util.Optional;
 
 /**
- * Corta las peticiones de cuentas suspendidas o borradas. Se ejecuta después del
- * filtro JWT, de modo que solo entra en juego cuando ya hay un usuario autenticado.
+ * Contrasta el token con el estado real de la cuenta. Se ejecuta después del filtro
+ * JWT, de modo que solo entra en juego cuando ya hay un usuario autenticado.
+ *
+ * Rechaza el token si la cuenta ya no existe o si su nombre de usuario ha cambiado
+ * desde que se emitió, y corta la petición si la cuenta no está activa.
  */
 @Component
 public class AccountStatusFilter extends OncePerRequestFilter {
@@ -39,11 +42,27 @@ public class AccountStatusFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        Optional<User> authenticatedUser = currentUsername()
-                .flatMap(userRepository::findByUsername);
+        Optional<String> username = currentUsername();
 
-        if (authenticatedUser.isPresent() && authenticatedUser.get().getStatus() != AccountStatus.ACTIVE) {
-            AccountStatus status = authenticatedUser.get().getStatus();
+        if (username.isEmpty()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        Long tokenUserId = (Long) request.getAttribute(JwtAuthenticationFilter.USER_ID_ATTRIBUTE);
+        Optional<User> account = userRepository.findByUsername(username.get());
+
+        // El nombre del token ya no corresponde a la misma cuenta: renombrada, borrada,
+        // o el nombre lo ocupa ahora otra persona. En los tres casos el token está muerto.
+        if (account.isEmpty() || tokenUserId == null || !tokenUserId.equals(account.get().getId())) {
+            SecurityContextHolder.clearContext();
+            errorResponder.write(request, response, HttpStatus.UNAUTHORIZED,
+                    "Tu sesión ya no es válida, vuelve a iniciar sesión");
+            return;
+        }
+
+        AccountStatus status = account.get().getStatus();
+        if (status != AccountStatus.ACTIVE) {
             SecurityContextHolder.clearContext();
             errorResponder.write(request, response, HttpStatus.FORBIDDEN,
                     status == AccountStatus.SUSPENDED

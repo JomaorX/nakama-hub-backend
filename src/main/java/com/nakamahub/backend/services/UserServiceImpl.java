@@ -6,6 +6,7 @@ import com.nakamahub.backend.dtos.auth.SignupResponseDTO;
 import com.nakamahub.backend.dtos.post.PostResponseDTO;
 import com.nakamahub.backend.dtos.user.*;
 import com.nakamahub.backend.models.*;
+import com.nakamahub.backend.repositories.CommentRepository;
 import com.nakamahub.backend.repositories.UserRepository;
 import com.nakamahub.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -33,8 +38,22 @@ public class UserServiceImpl implements UserService {
     @Autowired
     PostVisibility postVisibility;
 
+    @Autowired
+    PostMapper postMapper;
+
+    @Autowired
+    CommentMapper commentMapper;
+
+    @Autowired
+    CommentRepository commentRepository;
+
+    /** Prefijo reservado para las cuentas anonimizadas. Nadie puede registrarse con él. */
+    static final String DELETED_USERNAME_PREFIX = "usuario_eliminado_";
+
     @Override
     public SignupResponseDTO registerUser(CreateUserDTO createUserDTO) {
+        requireAvailableUsername(createUserDTO.getUsername());
+
         if (userRepository.existsByEmail(createUserDTO.getEmail()) || userRepository.existsByUsername(createUserDTO.getUsername())){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credenciales inválidas o Ya existe un usuario con esos datos");
         }
@@ -76,7 +95,7 @@ public class UserServiceImpl implements UserService {
                             : "Tu cuenta ha sido eliminada");
         }
 
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole().name());
 
         return LoginResponseDTO.builder()
                 .id(user.getId())
@@ -154,7 +173,7 @@ public class UserServiceImpl implements UserService {
 
         List<PostResponseDTO> visiblePosts = target.getPosts().stream()
                 .filter(post -> postVisibility.isVisibleTo(post, isOwner, isFollower))
-                .map(this::getPostResponseDTO)
+                .map(postMapper::toDTO)
                 .toList();
 
         return UserPublicProfileDTO.builder()
@@ -175,6 +194,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
         if (dto.getUsername() != null && !dto.getUsername().equals(user.getUsername())) {
+            requireAvailableUsername(dto.getUsername());
             if (userRepository.existsByUsername(dto.getUsername())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Nombre de usuario ya en uso");
             }
@@ -228,9 +248,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteAccount(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-        userRepository.delete(user);
+        anonymize(userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado")));
     }
 
     @Override
@@ -243,9 +262,96 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteAccountAsAuthority(String username) {
-        User targetUser = userRepository.findByUsername(username)
+        anonymize(userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado")));
+    }
+
+    /**
+     * Borrado lógico con anonimización, el modelo habitual en foros.
+     *
+     * El borrado físico no era viable: Comment.author es nullable = false y no había
+     * cascada, así que cualquier cuenta que hubiera comentado en un post ajeno hacía
+     * saltar la clave foránea. Y aunque funcionase, arrastraría los hilos de
+     * conversación de terceros.
+     *
+     * Se eliminan los datos personales y se rompe el vínculo con la identidad, que es
+     * lo que exige el derecho de supresión. Las publicaciones quedan atribuidas a una
+     * cuenta sin datos, igual que hacen Reddit o Discourse.
+     */
+    private void anonymize(User user) {
+        if (user.getStatus() == AccountStatus.DELETED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La cuenta ya está eliminada");
+        }
+
+        detachRelationships(user);
+
+        user.setUsername(DELETED_USERNAME_PREFIX + user.getId());
+        user.setEmail("eliminado-" + user.getId() + "@nakamahub.invalid");
+        // Contraseña imposible de adivinar: la cuenta no puede volver a usarse.
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setBio(null);
+        user.setAvatarUrl(null);
+        user.setPrivacy(ProfilePrivacy.PRIVATE);
+        user.setStatus(AccountStatus.DELETED);
+        user.setDeletedAt(LocalDateTime.now());
+
+        userRepository.save(user);
+    }
+
+    /**
+     * Deshace seguimientos y likes, devolviendo los puntos de reputación que esas
+     * acciones habían otorgado. Si no, al borrarse una cuenta la reputación que repartió
+     * quedaría inflada para siempre.
+     */
+    private void detachRelationships(User user) {
+        user.getFollowers().clear();
+
+        for (User followed : new HashSet<>(user.getFollowing())) {
+            followed.getFollowers().remove(user);
+            followed.setReputationPoints(Math.max(0, followed.getReputationPoints() - 1));
+        }
+        user.getFollowing().clear();
+
+        for (Post likedPost : new HashSet<>(user.getLikedPosts())) {
+            likedPost.setLikesCount(Math.max(0, likedPost.getLikesCount() - 1));
+            User author = likedPost.getAuthor();
+            author.setReputationPoints(Math.max(0, author.getReputationPoints() - 1));
+        }
+        user.getLikedPosts().clear();
+    }
+
+    private void requireAvailableUsername(String username) {
+        if (username != null && username.toLowerCase().startsWith(DELETED_USERNAME_PREFIX)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ese nombre de usuario está reservado");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDataExportDTO exportMyData(String username) {
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-        userRepository.delete(targetUser);
+
+        return UserDataExportDTO.builder()
+                .generatedAt(Instant.now())
+                .account(UserDataExportDTO.Account.builder()
+                        .id(user.getId())
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .bio(user.getBio())
+                        .avatarUrl(user.getAvatarUrl())
+                        .role(user.getRole().name())
+                        .privacy(user.getPrivacy().name())
+                        .status(user.getStatus().name())
+                        .reputationPoints(user.getReputationPoints())
+                        .build())
+                .followers(user.getFollowers().stream().map(User::getUsername).sorted().toList())
+                .following(user.getFollowing().stream().map(User::getUsername).sorted().toList())
+                .likedPostTitles(user.getLikedPosts().stream().map(Post::getTitle).sorted().toList())
+                .posts(user.getPosts().stream().map(postMapper::toDTO).toList())
+                .comments(commentRepository.findByAuthorIdOrderByCreatedAtDesc(user.getId()).stream()
+                        .map(commentMapper::toDTO).toList())
+                .build();
     }
 
     @Override
@@ -271,25 +377,6 @@ public class UserServiceImpl implements UserService {
         return getMe(user.getUsername());
     }
 
-    private PostResponseDTO getPostResponseDTO(Post post) {
-        return PostResponseDTO.builder()
-                .id(post.getId())
-                .title(post.getTitle())
-                .content(post.getContent())
-                .categories(post.getCategories().stream().map(Category::getName).toList())
-                .authorUsername(post.getAuthor().getUsername())
-                .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
-                .contentType(post.getContentType())
-                // Copia defensiva: getImageUrls devuelve la colección perezosa de Hibernate,
-                // que ya no se puede inicializar cuando Jackson serializa fuera de la transacción.
-                .imageUrls(List.copyOf(post.getImageUrls()))
-                .status(post.getStatus())
-                .privacy(post.getPrivacy())
-                .viewsCount(post.getViewsCount())
-                .likesCount(post.getLikesCount())
-                .build();
-    }
-
     private UserProfileDTO getUserProfileDTO(User user) {
         return UserProfileDTO.builder()
                 .id(user.getId())
@@ -302,7 +389,7 @@ public class UserServiceImpl implements UserService {
                 .followingCount(user.getFollowing().size())
                 .reputationPoints(user.getReputationPoints())
                 .postsCount(user.getPosts().size())
-                .posts(user.getPosts().stream().map(this::getPostResponseDTO).toList())
+                .posts(user.getPosts().stream().map(postMapper::toDTO).toList())
                 .build();
     }
 }

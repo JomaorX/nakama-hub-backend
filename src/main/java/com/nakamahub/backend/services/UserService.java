@@ -22,4 +22,7 @@ public interface UserService {
     void deleteAccount (String username);
     void suspendUserAsAuthority(String username);
     void deleteAccountAsAuthority (String username);
+
+    /** Volcado completo de los datos personales del propio usuario (RGPD, derecho de acceso). */
+    UserDataExportDTO exportMyData (String username);
 }

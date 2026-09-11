@@ -21,6 +21,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
+    /** Identificador de usuario del token, que AccountStatusFilter contrasta con la base de datos. */
+    public static final String USER_ID_ATTRIBUTE = JwtAuthenticationFilter.class.getName() + ".userId";
+
     private final JwtUtil jwtUtil;
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil) {
@@ -57,10 +60,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticate(DecodedJWT jwt, HttpServletRequest request) {
         String username = jwt.getSubject();
         String role = jwt.getClaim(JwtUtil.ROLE_CLAIM).asString();
+        Long userId = jwt.getClaim(JwtUtil.USER_ID_CLAIM).asLong();
 
-        if (username == null || username.isBlank() || role == null || role.isBlank()) {
+        if (username == null || username.isBlank() || role == null || role.isBlank() || userId == null) {
             return;
         }
+
+        request.setAttribute(USER_ID_ATTRIBUTE, userId);
 
         var authentication = new UsernamePasswordAuthenticationToken(
                 username, null, List.of(new SimpleGrantedAuthority(role)));

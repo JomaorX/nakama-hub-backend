@@ -56,7 +56,13 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 - Edición de nombre de usuario, email, biografía, avatar y privacidad
 
 ### 🛡️ Moderación
-- Suspensión y borrado de cuentas, posts y comentarios
+- Suspensión de cuentas y borrado de posts y comentarios
+
+### 🔒 Datos personales
+- Borrado de cuenta lógico con anonimización: se eliminan los datos personales y
+  las publicaciones quedan atribuidas a una cuenta sin identidad
+- Exportación de los datos propios en `GET /api/users/me/export`
+- Un cambio de nombre de usuario invalida los tokens emitidos antes
 
 ## 🧭 Pendiente
 
@@ -64,8 +70,8 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 - Timeline de los usuarios seguidos y buscador
 - Subida real de imágenes, ahora solo se guardan URLs
 - Verificación por email, recuperación de contraseña y refresh token
-- Borrado lógico de cuentas y exportación de datos personales
 - Reporte y bloqueo de usuarios
+- Purgado definitivo de las cuentas anonimizadas pasado un plazo de retención
 - Migraciones con Flyway en lugar de `ddl-auto=update`
 - Documentación viva con springdoc
 
