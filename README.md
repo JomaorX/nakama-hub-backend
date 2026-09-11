@@ -1,76 +1,99 @@
 # Nakama Hub Backend
 
-Backend REST API for a content-sharing platform focused on anime, manga, series, and general discussions.
+API REST para una comunidad de anime, manga y series: publicaciones con hilos de
+comentarios anidados, categorías, seguimiento entre usuarios y reputación.
 
-## 📖 API Documentation
-
-You can explore the full API documentation and test endpoints via Postman:
+## 📖 Documentación de la API
 
 [![Postman Docs](https://img.shields.io/badge/Postman-API_Docs-orange)](https://documenter.getpostman.com/view/46853536/2sB3WqvgX9)
 
-## 🚀 Technologies Used
+## 🚀 Tecnologías
 
 - Java 25
-- Spring Boot
-- Spring Security (JWT)
+- Spring Boot 3.5
+- Spring Security con JWT
 - JPA / Hibernate
-- MySQL
+- MySQL en ejecución, H2 en los tests
 - Maven
 
-## 📦 Features
+## ⚙️ Puesta en marcha
 
-### 🔐 Authentication
-- User registration and login
-- Password encryption with BCrypt
-- JWT token generation and validation
-- Role-based access control (USER, MODERATOR, ADMIN)
+```bash
+cp .env.example .env          # y rellena los valores
+openssl rand -base64 48       # genera el JWT_SECRET
+./mvnw spring-boot:run
+```
+
+El fichero `.env` lo carga Spring al arrancar y **nunca debe subirse al repositorio**.
+La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
+
+```bash
+./mvnw verify                 # compila y ejecuta la suite, sin necesidad de MySQL
+```
+
+## 📦 Funcionalidad
+
+### 🔐 Autenticación
+- Registro y login con contraseñas cifradas con BCrypt
+- Emisión y verificación de JWT
+- Roles: `USER`, `MODERATOR`, `ADMIN`
+- Las cuentas suspendidas quedan bloqueadas en el filtro de seguridad
 
 ### 📝 Posts
-- Create and retrieve posts
-- Content types: ANIME, MANGA, SERIES, GENERAL
-- Automatic timestamps (`createdAt`, `updatedAt`)
-- Validation logic for series vs content type
-- Category assignment
+- Publicación con tipo de contenido `ANIME`, `MANGA`, `SERIE` o `GENERAL`
+- Estados `DRAFT`, `PUBLISHED` y `ARCHIVED`
+- Visibilidad `PUBLIC`, `FOLLOWERS_ONLY` y `PRIVATE`, aplicada tanto en el feed
+  como al pedir un post por su identificador
+- Categorías, asociación a serie, likes y contador de visitas
 
-### 💬 Comments *(in progress)*
-- Comment model and endpoints
-- Linked to posts and users
+### 💬 Comentarios
+- Hilos con respuestas anidadas
+- Listados paginados por post, por hilo y por autor
+- Un comentario nunca revela el contenido de un post que el visitante no puede ver
 
-## 🧠 Development Workflow
+### 👤 Perfiles
+- Perfil público y privado, seguimiento entre usuarios y puntos de reputación
+- Edición de nombre de usuario, email, biografía, avatar y privacidad
 
-This project follows GitFlow. Each feature is developed in its own branch and merged via Pull Requests.
+### 🛡️ Moderación
+- Suspensión y borrado de cuentas, posts y comentarios
 
-### Example branches:
-- `feature/auth` → [PR #1](https://github.com/JomaorX/nakama-hub-backend/pull/1): Authentication and post module
-- `feature/comment` → [PR #2](https://github.com/JomaorX/nakama-hub-backend/pull/2): Comment module 
-- `feature/post` → [PR #3](https://github.com/JomaorX/nakama-hub-backend/pull/3): Update post module
-- `feature/user` → [PR #4](https://github.com/JomaorX/nakama-hub-backend/pull/4): User module 
-## 📂 Folder Structure
+## 🧭 Pendiente
+
+- Edición de posts y comentarios
+- Timeline de los usuarios seguidos y buscador
+- Subida real de imágenes, ahora solo se guardan URLs
+- Verificación por email, recuperación de contraseña y refresh token
+- Borrado lógico de cuentas y exportación de datos personales
+- Reporte y bloqueo de usuarios
+- Migraciones con Flyway en lugar de `ddl-auto=update`
+- Documentación viva con springdoc
+
+## 🧠 Flujo de trabajo
+
+El proyecto sigue GitFlow. Cada funcionalidad se desarrolla en su rama y se integra
+mediante Pull Request.
+
+- `feature/auth` → [PR #1](https://github.com/JomaorX/nakama-hub-backend/pull/1): autenticación y módulo de posts
+- `feature/comment` → [PR #2](https://github.com/JomaorX/nakama-hub-backend/pull/2): módulo de comentarios
+- `feature/post` → [PR #3](https://github.com/JomaorX/nakama-hub-backend/pull/3): mejoras del módulo de posts
+- `feature/user` → [PR #4](https://github.com/JomaorX/nakama-hub-backend/pull/4): módulo de usuarios
+
+## 📂 Estructura
+
 ```
 src/
-├── main/
-│   ├── java/
-│   ├── java/
-│   │  └── com/nakamahub/
-│   │       ├── config/
-│   │       ├── controllers/
-│   │       ├── dtos/
-│   │       ├── models/
-│   │       ├── repositories/
-│   │       ├── security/
-│   │       └── services/
-│   └── resources/
-│       └── application.properties
+├── main/java/com/nakamahub/backend/
+│   ├── config/         # seguridad, manejo de errores y datos iniciales
+│   ├── controllers/
+│   ├── dtos/
+│   ├── models/
+│   ├── repositories/
+│   ├── security/       # filtros JWT y utilidades
+│   └── services/
+└── test/java/com/nakamahub/backend/
 ```
 
-## 📌 Notes
+## 📬 Contacto
 
-• This project is under active development
-
-• Comments module is next
-
-• Future plans: likes, moderation tools, user profiles
-
-## 📬 Contact
-
-Made with ❤️ by José Miguel Martínez [LinkedIn](https://www.linkedin.com/in/martinez97pro) • [GitHub](https://github.com/JomaorX) • [Portfolio](https://jomaor.dev)
+Hecho con ❤️ por José Miguel Martínez [LinkedIn](https://www.linkedin.com/in/martinez97pro) • [GitHub](https://github.com/JomaorX) • [Portfolio](https://jomaor.dev)
