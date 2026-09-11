@@ -83,6 +83,7 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 
 ### 💬 Comentarios
 - Hilos con respuestas anidadas, con edición por parte del autor
+- Cada comentario informa de cuántas respuestas tiene, que se cargan solo al abrirlas
 - Listados paginados por post, por hilo y por autor
 - Un comentario nunca revela el contenido de un post que el visitante no puede ver
 
@@ -117,7 +118,6 @@ del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
 - Subida real de imágenes, ahora solo se guardan URLs
 - Verificación por email y recuperación de contraseña
 - Bloqueo de usuarios entre sí
-- Respuestas anidadas en la interfaz, que la API ya soporta
 - Purgado definitivo de las cuentas anonimizadas pasado un plazo de retención
 - Migraciones con Flyway en lugar de `ddl-auto=update`
 

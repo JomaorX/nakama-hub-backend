@@ -7,6 +7,10 @@ export interface Comment {
   createdAt: string;
   updatedAt: string;
   edited: boolean;
+  /** Cuántas respuestas cuelgan de este comentario. */
+  replyCount: number;
+  /** Si quien consulta es el autor. */
+  own: boolean;
 }
 
 export interface CreateCommentPayload {

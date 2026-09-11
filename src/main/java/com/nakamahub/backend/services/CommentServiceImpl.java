@@ -71,14 +71,15 @@ public class CommentServiceImpl implements CommentService {
 
         author.setReputationPoints(author.getReputationPoints() + 1);
 
-        return commentMapper.toDTO(commentRepository.save(newComment));
+        return commentMapper.toDTO(commentRepository.save(newComment), author);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<CommentResponseDTO> getCommentsByPost(Long postId, Pageable pageable, String viewerUsername) {
         requireVisiblePost(postId, viewerUsername);
-        return commentRepository.findByPostIdAndParentIdIsNull(postId, pageable).map(commentMapper::toDTO);
+        return commentMapper.toPage(
+                commentRepository.findByPostIdAndParentIdIsNull(postId, pageable), findViewer(viewerUsername));
     }
 
     @Override
@@ -87,9 +88,10 @@ public class CommentServiceImpl implements CommentService {
         Comment parent = commentRepository.findWithAuthorById(parentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario no encontrado"));
 
-        requireVisible(parent.getPost(), findViewer(viewerUsername));
+        User viewer = findViewer(viewerUsername);
+        requireVisible(parent.getPost(), viewer);
 
-        return commentRepository.findByParentId(parentId, pageable).map(commentMapper::toDTO);
+        return commentMapper.toPage(commentRepository.findByParentId(parentId, pageable), viewer);
     }
 
     @Override
@@ -98,7 +100,8 @@ public class CommentServiceImpl implements CommentService {
         User viewer = findViewer(viewerUsername);
         Long viewerId = viewer == null ? null : viewer.getId();
 
-        return commentRepository.findVisibleByAuthorId(authorId, viewerId, pageable).map(commentMapper::toDTO);
+        return commentMapper.toPage(
+                commentRepository.findVisibleByAuthorId(authorId, viewerId, pageable), viewer);
     }
 
     @Override
@@ -113,7 +116,7 @@ public class CommentServiceImpl implements CommentService {
         comment.setContent(updateCommentDTO.getContent());
         comment.setEditedAt(LocalDateTime.now());
 
-        return commentMapper.toDTO(comment);
+        return commentMapper.toDTO(comment, comment.getAuthor());
     }
 
     @Override

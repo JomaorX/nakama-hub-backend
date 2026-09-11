@@ -22,6 +22,14 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @EntityGraph(attributePaths = {"author", "post", "parent"})
     Optional<Comment> findWithAuthorById(Long id);
 
+    /**
+     * Número de respuestas de cada comentario indicado, en una sola consulta.
+     * Pedirlo uno a uno convertiría una página de veinte comentarios en veintiuna
+     * consultas.
+     */
+    @Query("select c.parent.id, count(c) from Comment c where c.parent.id in :parentIds group by c.parent.id")
+    List<Object[]> countRepliesFor(@Param("parentIds") List<Long> parentIds);
+
     /** Todos los comentarios del usuario, sin filtro de visibilidad: solo para su propia exportación de datos. */
     @EntityGraph(attributePaths = {"author", "post", "parent"})
     List<Comment> findByAuthorIdOrderByCreatedAtDesc(Long authorId);

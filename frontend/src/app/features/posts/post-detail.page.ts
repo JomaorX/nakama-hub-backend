@@ -11,12 +11,13 @@ import { errorMessage } from '../../shared/api-error';
 import { Avatar } from '../../shared/avatar';
 import { RelativeTimePipe } from '../../shared/relative-time.pipe';
 import { ReportButton } from '../../shared/report-button';
+import { CommentItem } from './comment-item';
 import { Spinner } from '../../shared/spinner';
 
 @Component({
   selector: 'app-post-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ReactiveFormsModule, Avatar, RelativeTimePipe, Spinner, ReportButton],
+  imports: [RouterLink, ReactiveFormsModule, Avatar, RelativeTimePipe, Spinner, ReportButton, CommentItem],
   template: `
     @if (loading()) {
       <app-spinner />
@@ -96,39 +97,7 @@ import { Spinner } from '../../shared/spinner';
         }
 
         @for (comment of comments(); track comment.id) {
-          <article class="comment">
-            <a class="comment__author" [routerLink]="['/u', comment.authorUsername]">
-              <app-avatar [username]="comment.authorUsername" [size]="28" />
-              <span>{{ comment.authorUsername }}</span>
-            </a>
-            <time>
-              {{ comment.createdAt | relativeTime }}@if (comment.edited) {<span class="badge">editado</span>}
-            </time>
-
-            @if (editingId() === comment.id) {
-              <form class="comment__edit" [formGroup]="editForm" (ngSubmit)="saveComment(comment.id)" novalidate>
-                <textarea formControlName="content" rows="3" maxlength="1000"></textarea>
-                <div class="comment__edit-actions">
-                  <button type="submit" class="button button--small" [disabled]="editForm.invalid">Guardar</button>
-                  <button type="button" class="button button--ghost button--small" (click)="cancelEdit()">
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            } @else {
-              <p>{{ comment.content }}</p>
-              <div class="comment__actions">
-                @if (comment.authorUsername === username()) {
-                  <button type="button" class="link-button" (click)="startEdit(comment)">Editar</button>
-                  <button type="button" class="link-button link-button--danger" (click)="removeComment(comment.id)">
-                    Borrar
-                  </button>
-                } @else if (isLoggedIn()) {
-                  <app-report-button targetType="COMMENT" [targetId]="comment.id" compact />
-                }
-              </div>
-            }
-          </article>
+          <app-comment-item [comment]="comment" (removed)="dropComment($event)" />
         } @empty {
           <p class="muted">Todavía no hay comentarios.</p>
         }
@@ -154,32 +123,6 @@ import { Spinner } from '../../shared/spinner';
     .comment-form { display: grid; gap: 0.6rem; }
     .comment-form button { justify-self: start; }
 
-    .comment {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 0.25rem 0.75rem;
-      padding: 0.85rem 0;
-      border-top: 1px solid var(--border);
-    }
-    .comment__author { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.9rem; color: inherit; text-decoration: none; }
-    .comment time { color: var(--text-dim); font-size: 0.8rem; align-self: center; }
-    .comment p { grid-column: 1 / -1; margin: 0.25rem 0 0; line-height: 1.6; white-space: pre-wrap; }
-    .comment__actions { grid-column: 1 / -1; display: flex; gap: 0.75rem; margin-top: 0.35rem; }
-    .comment__edit { grid-column: 1 / -1; display: grid; gap: 0.5rem; margin-top: 0.4rem; }
-    .comment__edit-actions { display: flex; gap: 0.5rem; }
-
-    .link-button {
-      background: none;
-      border: none;
-      padding: 0;
-      font: inherit;
-      font-size: 0.82rem;
-      color: var(--text-dim);
-      cursor: pointer;
-      text-decoration: underline;
-    }
-    .link-button:hover { color: var(--text); }
-    .link-button--danger:hover { color: var(--danger); }
 
     .like--on { color: var(--accent); border-color: var(--accent); }
   `,
@@ -203,10 +146,6 @@ export class PostDetailPage {
   protected readonly liking = signal(false);
 
   protected readonly isLoggedIn = this.auth.isLoggedIn;
-  protected readonly username = this.auth.username;
-
-  /** Identificador del comentario que se está editando, o null. */
-  protected readonly editingId = signal<number | null>(null);
 
   private readonly formBuilder = inject(FormBuilder);
 
@@ -214,9 +153,6 @@ export class PostDetailPage {
     content: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(1000)]],
   });
 
-  protected readonly editForm = this.formBuilder.nonNullable.group({
-    content: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(1000)]],
-  });
 
   ngOnInit(): void {
     const postId = Number(this.id());
@@ -288,38 +224,8 @@ export class PostDetailPage {
       });
   }
 
-  protected startEdit(comment: Comment): void {
-    this.editingId.set(comment.id);
-    this.editForm.setValue({ content: comment.content });
-  }
-
-  protected cancelEdit(): void {
-    this.editingId.set(null);
-  }
-
-  protected saveComment(id: number): void {
-    if (this.editForm.invalid) {
-      return;
-    }
-
-    this.commentService.update(id, this.editForm.getRawValue().content).subscribe({
-      next: (updated) => {
-        this.comments.update((list) => list.map((item) => (item.id === id ? updated : item)));
-        this.editingId.set(null);
-      },
-      error: (err: unknown) => this.commentError.set(errorMessage(err)),
-    });
-  }
-
-  protected removeComment(id: number): void {
-    if (!confirm('¿Seguro que quieres borrar este comentario?')) {
-      return;
-    }
-
-    this.commentService.remove(id).subscribe({
-      next: () => this.comments.update((list) => list.filter((item) => item.id !== id)),
-      error: (err: unknown) => this.commentError.set(errorMessage(err)),
-    });
+  protected dropComment(id: number): void {
+    this.comments.update((list) => list.filter((comment) => comment.id !== id));
   }
 
   protected remove(): void {

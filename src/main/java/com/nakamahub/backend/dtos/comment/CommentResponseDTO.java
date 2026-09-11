@@ -22,4 +22,10 @@ public class CommentResponseDTO {
 
     /** Ver la explicación en PostResponseDTO.edited. */
     private boolean edited;
+
+    /** Cuántas respuestas cuelgan de este comentario, para no tener que pedirlas por si acaso. */
+    private long replyCount;
+
+    /** Si quien consulta es el autor, para decidir si ofrecer editar y borrar. */
+    private boolean own;
 }

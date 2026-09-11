@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -194,6 +195,38 @@ class ContentEditingTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("Lo he pensado mejor y llevas razón"))
                 .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("Un comentario informa de cuántas respuestas tiene")
+    void unComentarioInformaDeSusRespuestas() throws Exception {
+        Comment raiz = data.comment(brook, post, "Abro hilo sobre esto mismo");
+        data.reply(robin, post, raiz, "Respondo al hilo que abriste");
+        data.reply(brook, post, raiz, "Y matizo lo que dije antes");
+
+        mockMvc.perform(get("/api/comments/post/" + post.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].replyCount").value(2));
+
+        mockMvc.perform(get("/api/comments/" + raiz.getId() + "/replies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].parentId").value(raiz.getId()))
+                .andExpect(jsonPath("$.content[0].replyCount").value(0));
+    }
+
+    @Test
+    @DisplayName("El autor recibe sus comentarios marcados como propios")
+    void elAutorRecibeSusComentariosComoPropios() throws Exception {
+        data.comment(brook, post, "Un comentario cualquiera");
+
+        mockMvc.perform(get("/api/comments/post/" + post.getId())
+                        .header(HttpHeaders.AUTHORIZATION, data.bearer("brook")))
+                .andExpect(jsonPath("$.content[0].own").value(true));
+
+        mockMvc.perform(get("/api/comments/post/" + post.getId()))
+                .andExpect(jsonPath("$.content[0].own").value(false));
     }
 
     @Test

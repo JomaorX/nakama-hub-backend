@@ -86,6 +86,16 @@ public class TestDataFactory {
     }
 
     @Transactional
+    public Comment reply(User author, Post post, Comment parent, String content) {
+        Comment comment = new Comment();
+        comment.setAuthor(author);
+        comment.setPost(post);
+        comment.setParent(parent);
+        comment.setContent(content);
+        return commentRepository.save(comment);
+    }
+
+    @Transactional
     public void like(User user, Post post) {
         User managedUser = userRepository.findById(user.getId()).orElseThrow();
         Post managedPost = postRepository.findById(post.getId()).orElseThrow();
