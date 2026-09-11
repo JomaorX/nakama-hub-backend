@@ -7,11 +7,11 @@ import com.nakamahub.backend.repositories.CategoryRepository;
 import com.nakamahub.backend.repositories.PostRepository;
 import com.nakamahub.backend.repositories.SerieRepository;
 import com.nakamahub.backend.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -19,23 +19,31 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class PostServiceImpl implements PostService{
-    @Autowired
-    PostRepository postRepository;
+@Transactional
+public class PostServiceImpl implements PostService {
 
-    @Autowired
-    UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+    private final SerieRepository serieRepository;
+    private final PostVisibility postVisibility;
 
-    @Autowired
-    CategoryRepository categoryRepository;
-
-    @Autowired
-    SerieRepository serieRepository;
+    public PostServiceImpl(PostRepository postRepository,
+                           UserRepository userRepository,
+                           CategoryRepository categoryRepository,
+                           SerieRepository serieRepository,
+                           PostVisibility postVisibility) {
+        this.postRepository = postRepository;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+        this.serieRepository = serieRepository;
+        this.postVisibility = postVisibility;
+    }
 
     @Override
     public PostResponseDTO createPost(CreatePostDTO createPostDTO, String username) {
         User author = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
         ContentType type = createPostDTO.getContentType();
         String serieName = createPostDTO.getSerieName();
@@ -43,35 +51,26 @@ public class PostServiceImpl implements PostService{
 
         Serie postSerie = null;
         if (hasSerieName) {
-            postSerie = serieRepository.findByName(serieName).orElse(null);
-
-            // Validar si la serie no existe
-            if (postSerie == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serie no encontrada");
-            }
+            postSerie = serieRepository.findByName(serieName)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Serie no encontrada"));
         }
 
         // Validaciones de tipo de contenido según presencia de serie
         if (postSerie != null) {
             if (type == null || type == ContentType.GENERAL) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Si hay serie, el tipo de contenido debe ser ANIME, MANGA o SERIE");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Si hay serie, el tipo de contenido debe ser ANIME, MANGA o SERIE");
             }
-        } else {
-            if (type != ContentType.GENERAL) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Si no hay serie, el tipo de contenido debe ser GENERAL");
-            }
+        } else if (type != ContentType.GENERAL) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Si no hay serie, el tipo de contenido debe ser GENERAL");
         }
-
 
         // Título duplicado para el mismo autor
         if (postRepository.existsByTitleAndAuthor(createPostDTO.getTitle(), author)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya posees un Post con ese título");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya posees un Post con ese título");
         }
 
-        // Procesar categorías
-        Set<Category> categories = categoryProcess(createPostDTO.getCategories());
-
-        // Crear y guardar el post
         Post newPost = new Post();
         newPost.setTitle(createPostDTO.getTitle());
         newPost.setContent(createPostDTO.getContent());
@@ -79,34 +78,52 @@ public class PostServiceImpl implements PostService{
         newPost.setStatus(createPostDTO.getStatus() != null ? createPostDTO.getStatus() : PostStatus.DRAFT);
         newPost.setPrivacy(createPostDTO.getPrivacy() != null ? createPostDTO.getPrivacy() : PrivacyLevel.PUBLIC);
         newPost.setSerie(postSerie);
-        newPost.setCategories(categories);
+        newPost.setCategories(resolveCategories(createPostDTO.getCategories()));
         newPost.setAuthor(author);
 
-        if (createPostDTO.getImageUrls() != null){
+        if (createPostDTO.getImageUrls() != null) {
             newPost.setImageUrls(createPostDTO.getImageUrls());
         }
 
         author.setReputationPoints(author.getReputationPoints() + 1);
-        Post savedPost = postRepository.save(newPost);
+        userRepository.save(author);
 
-        return toDTO(savedPost);
-    }
-
-
-    @Override
-    public Page<PostResponseDTO> getAllPost(Pageable pageable) {
-        return postRepository.findAll(pageable)
-                .map(this::toDTO);
+        return toDTO(postRepository.save(newPost));
     }
 
     @Override
-    public PostResponseDTO getPostById(Long id) {
-        Post post = postRepository.findById(id)
+    @Transactional(readOnly = true)
+    public Page<PostResponseDTO> getAllPost(Pageable pageable, String viewerUsername) {
+        Long viewerId = userRepository.findByUsername(viewerUsername == null ? "" : viewerUsername)
+                .map(User::getId)
+                .orElse(null);
+
+        return postRepository.findVisibleFor(viewerId, pageable).map(this::toDTO);
+    }
+
+    @Override
+    public PostResponseDTO getPostById(Long id, String viewerUsername) {
+        Post post = postRepository.findWithAuthorById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
-        post.setViewsCount(post.getViewsCount() + 1);
-        Post savedPost = postRepository.save(post);
 
-        return toDTO(savedPost);
+        User viewer = viewerUsername == null ? null
+                : userRepository.findByUsername(viewerUsername).orElse(null);
+
+        boolean isAuthor = viewer != null && post.getAuthor().equals(viewer);
+
+        if (!postVisibility.isVisibleTo(post, viewer)) {
+            // Mismo 404 que un post inexistente: un 403 confirmaría que el post existe.
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
+        }
+
+        PostResponseDTO dto = toDTO(post);
+
+        if (!isAuthor) {
+            postRepository.incrementViewsCount(id);
+            dto.setViewsCount(dto.getViewsCount() + 1);
+        }
+
+        return dto;
     }
 
     @Override
@@ -114,58 +131,60 @@ public class PostServiceImpl implements PostService{
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        Post post = postRepository.findById(id)
+        Post post = postRepository.findWithAuthorById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
+
+        if (!postVisibility.isVisibleTo(post, user)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
+        }
 
         User author = post.getAuthor();
 
-        if (user.getLikedPosts().contains(post)) {
-            // Ya tenía like → lo quitamos
-            user.getLikedPosts().remove(post);
-            post.setLikesCount(post.getLikesCount() - 1);
+        if (user.getLikedPosts().remove(post)) {
+            post.setLikesCount(Math.max(0, post.getLikesCount() - 1));
             author.setReputationPoints(author.getReputationPoints() - 1);
         } else {
-            // No tenía like → lo añadimos
             user.getLikedPosts().add(post);
             post.setLikesCount(post.getLikesCount() + 1);
             author.setReputationPoints(author.getReputationPoints() + 1);
         }
 
-        userRepository.save(user);
-        userRepository.save(author);
-        postRepository.save(post);
-
+        // Las tres escrituras van en la misma transacción del método, así que un fallo
+        // a mitad ya no deja el contador de likes desacompasado de la reputación.
         return toDTO(post);
     }
 
     @Override
     public void deletePost(Long id, String currentUsername) {
-    Post targetPost = postRepository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException (HttpStatus.NOT_FOUND, "Post no encontrado"));
+        Post targetPost = postRepository.findWithAuthorById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
 
-    if (!targetPost.getAuthor().getUsername().equals(currentUsername)){
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes borrar este post");
-    }
+        if (!targetPost.getAuthor().getUsername().equals(currentUsername)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes borrar este post");
+        }
 
-    postRepository.delete(targetPost);
+        postRepository.delete(targetPost);
     }
 
     @Override
     public void deletePostAsAuthority(Long id) {
         Post targetPost = postRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException (HttpStatus.NOT_FOUND, "Post no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
         postRepository.delete(targetPost);
     }
 
-
-    private Set<Category> categoryProcess(List<String> categoryNames) {
+    private Set<Category> resolveCategories(List<String> categoryNames) {
+        if (categoryNames == null || categoryNames.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debes indicar al menos una categoría");
+        }
         return categoryNames.stream()
                 .map(name -> categoryRepository.findByName(name)
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Categoría no válida: " + name)))
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "Categoría no válida: " + name)))
                 .collect(Collectors.toSet());
     }
 
-    private PostResponseDTO toDTO (Post post) {
+    private PostResponseDTO toDTO(Post post) {
         return PostResponseDTO.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -174,12 +193,13 @@ public class PostServiceImpl implements PostService{
                 .authorUsername(post.getAuthor().getUsername())
                 .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
                 .contentType(post.getContentType())
-                .imageUrls(post.getImageUrls())
+                // Copia defensiva: getImageUrls devuelve la colección perezosa de Hibernate,
+                // que ya no se puede inicializar cuando Jackson serializa fuera de la transacción.
+                .imageUrls(List.copyOf(post.getImageUrls()))
                 .status(post.getStatus())
                 .privacy(post.getPrivacy())
                 .viewsCount(post.getViewsCount())
                 .likesCount(post.getLikesCount())
                 .build();
     }
-
 }

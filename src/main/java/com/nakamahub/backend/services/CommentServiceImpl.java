@@ -8,33 +8,42 @@ import com.nakamahub.backend.models.User;
 import com.nakamahub.backend.repositories.CommentRepository;
 import com.nakamahub.backend.repositories.PostRepository;
 import com.nakamahub.backend.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-
 @Service
+@Transactional
 public class CommentServiceImpl implements CommentService {
-    @Autowired
-    UserRepository userRepository;
 
-    @Autowired
-    CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
+    private final PostRepository postRepository;
+    private final PostVisibility postVisibility;
 
-    @Autowired
-    PostRepository postRepository;
+    public CommentServiceImpl(UserRepository userRepository,
+                              CommentRepository commentRepository,
+                              PostRepository postRepository,
+                              PostVisibility postVisibility) {
+        this.userRepository = userRepository;
+        this.commentRepository = commentRepository;
+        this.postRepository = postRepository;
+        this.postVisibility = postVisibility;
+    }
 
     @Override
     public CommentResponseDTO createComment(CreateCommentDTO createCommentDTO, String username) {
         User author = userRepository.findByUsername(username)
-                .orElseThrow( () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        Post post = postRepository.findById(createCommentDTO.getPostId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post no encontrado"));
+        Post post = postRepository.findWithAuthorById(createCommentDTO.getPostId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
 
+        // Sin esto se podía comentar en un borrador ajeno conociendo su id.
+        requireVisible(post, author);
 
         Comment newComment = new Comment();
         newComment.setContent(createCommentDTO.getContent());
@@ -43,67 +52,85 @@ public class CommentServiceImpl implements CommentService {
 
         if (createCommentDTO.getParentId() != null) {
             Comment parent = commentRepository.findById(createCommentDTO.getParentId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comentario padre no encontrado"));
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "Comentario padre no encontrado"));
 
             if (!parent.getPost().getId().equals(post.getId())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El comentario padre pertenece a otro post");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "El comentario padre pertenece a otro post");
             }
 
             newComment.setParent(parent);
         }
 
         author.setReputationPoints(author.getReputationPoints() + 1);
-        userRepository.save(author);
-        Comment savedComment = commentRepository.save(newComment);
 
-        return CommentResponseDTO.builder()
-                .id(savedComment.getId())
-                .content(savedComment.getContent())
-                .postId(savedComment.getPost().getId())
-                .authorUsername(savedComment.getAuthor().getUsername())
-                .parentId(savedComment.getParent() != null ? savedComment.getParent().getId() : null)
-                .createdAt(savedComment.getCreatedAt())
-                .updatedAt(savedComment.getUpdatedAt())
-                .build();
+        return mapToDTO(commentRepository.save(newComment));
     }
 
     @Override
-    public Page<CommentResponseDTO> getCommentsByPost(Long postId, Pageable pageable) {
-        return commentRepository.findByPostIdAndParentIdIsNull(postId, pageable)
-                .map(this::mapToDTO);
+    @Transactional(readOnly = true)
+    public Page<CommentResponseDTO> getCommentsByPost(Long postId, Pageable pageable, String viewerUsername) {
+        requireVisiblePost(postId, viewerUsername);
+        return commentRepository.findByPostIdAndParentIdIsNull(postId, pageable).map(this::mapToDTO);
     }
 
     @Override
-    public Page<CommentResponseDTO> getCommentsByUser(Long authorId, Pageable pageable) {
-        return commentRepository.findByAuthorId(authorId, pageable)
-                .map(this::mapToDTO);
+    @Transactional(readOnly = true)
+    public Page<CommentResponseDTO> getCommentsByParent(Long parentId, Pageable pageable, String viewerUsername) {
+        Comment parent = commentRepository.findWithAuthorById(parentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario no encontrado"));
+
+        requireVisible(parent.getPost(), findViewer(viewerUsername));
+
+        return commentRepository.findByParentId(parentId, pageable).map(this::mapToDTO);
     }
 
     @Override
-    public Page<CommentResponseDTO> getCommentsByParent(Long parentId, Pageable pageable) {
-        return commentRepository.findByParentId(parentId, pageable)
-                .map(this::mapToDTO);
+    @Transactional(readOnly = true)
+    public Page<CommentResponseDTO> getCommentsByUser(Long authorId, Pageable pageable, String viewerUsername) {
+        User viewer = findViewer(viewerUsername);
+        Long viewerId = viewer == null ? null : viewer.getId();
+
+        return commentRepository.findVisibleByAuthorId(authorId, viewerId, pageable).map(this::mapToDTO);
     }
 
     @Override
     public void deleteComment(Long commentId, String authorUsername) {
-    Comment targetComment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comentario no encontrado"));
+        Comment targetComment = commentRepository.findWithAuthorById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario no encontrado"));
 
-    if (!targetComment.getAuthor().getUsername().equals(authorUsername)){
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes borrar este comentario");
-    }
+        if (!targetComment.getAuthor().getUsername().equals(authorUsername)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes borrar este comentario");
+        }
 
-    commentRepository.delete(targetComment);
+        commentRepository.delete(targetComment);
     }
 
     @Override
     public void deleteCommentAsAuthority(Long id) {
         Comment targetComment = commentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comentario no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario no encontrado"));
         commentRepository.delete(targetComment);
     }
 
+    private User findViewer(String viewerUsername) {
+        return viewerUsername == null ? null
+                : userRepository.findByUsername(viewerUsername).orElse(null);
+    }
+
+    private void requireVisiblePost(Long postId, String viewerUsername) {
+        Post post = postRepository.findWithAuthorById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado"));
+        requireVisible(post, findViewer(viewerUsername));
+    }
+
+    /** Mismo 404 que un post inexistente: un 403 confirmaría que el post existe. */
+    private void requireVisible(Post post, User viewer) {
+        if (!postVisibility.isVisibleTo(post, viewer)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post no encontrado");
+        }
+    }
 
     private CommentResponseDTO mapToDTO(Comment comment) {
         return CommentResponseDTO.builder()

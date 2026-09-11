@@ -12,11 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class UserServiceImpl implements UserService {
     @Autowired
     UserRepository userRepository;
@@ -26,6 +29,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     JwtUtil jwtUtil;
+
+    @Autowired
+    PostVisibility postVisibility;
 
     @Override
     public SignupResponseDTO registerUser(CreateUserDTO createUserDTO) {
@@ -61,6 +67,13 @@ public class UserServiceImpl implements UserService {
 
         if (!passwordEncoder.matches(loginUser.getPassword(), user.getPassword())){
             throw  new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos");
+        }
+
+        if (user.getStatus() != AccountStatus.ACTIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    user.getStatus() == AccountStatus.SUSPENDED
+                            ? "Tu cuenta está suspendida"
+                            : "Tu cuenta ha sido eliminada");
         }
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
@@ -103,6 +116,7 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public UserProfileDTO getMe(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
@@ -111,19 +125,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserPublicProfileDTO getProfile(String targetUsername, String viewerUsername) {
         User target = userRepository.findByUsername(targetUsername)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
         if (target.getStatus() != AccountStatus.ACTIVE) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Perfil suspendido");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
         }
 
-        User viewer = userRepository.findByUsername(viewerUsername)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Viewer no encontrado"));
+        // El endpoint es público, así que el visitante puede no existir. Antes se
+        // buscaba "anonymousUser" en base de datos y el perfil devolvía un 404.
+        User viewer = viewerUsername == null ? null
+                : userRepository.findByUsername(viewerUsername).orElse(null);
 
-        boolean isOwner = target.equals(viewer);
-        boolean isFollower = target.getFollowers().contains(viewer);
+        boolean isOwner = viewer != null && target.equals(viewer);
+        boolean isFollower = viewer != null && target.getFollowers().contains(viewer);
 
         if (target.getPrivacy() == ProfilePrivacy.PRIVATE && !isOwner && !isFollower) {
             // Perfil privado → solo datos básicos
@@ -135,7 +152,11 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
 
-        // Perfil público o viewer autorizado → datos completos
+        List<PostResponseDTO> visiblePosts = target.getPosts().stream()
+                .filter(post -> postVisibility.isVisibleTo(post, isOwner, isFollower))
+                .map(this::getPostResponseDTO)
+                .toList();
+
         return UserPublicProfileDTO.builder()
                 .id(target.getId())
                 .username(target.getUsername())
@@ -143,11 +164,10 @@ public class UserServiceImpl implements UserService {
                 .avatarUrl(target.getAvatarUrl())
                 .followersCount(target.getFollowers().size())
                 .followingCount(target.getFollowing().size())
-                .postsCount(target.getPosts().size())
-                .posts(target.getPosts().stream().map(this::getPostResponseDTO).toList())
+                .postsCount(visiblePosts.size())
+                .posts(visiblePosts)
                 .build();
     }
-
 
     @Override
     public UserProfileDTO updateUsername(String currentUsername, UpdateUsernameDTO dto) {
@@ -215,17 +235,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void suspendUserAsAuthority(String username) {
-    User targetUser = userRepository.findByUsername(username)
-            .orElseThrow( () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-    targetUser.setStatus(AccountStatus.SUSPENDED);
-    userRepository.save(targetUser);
+        User targetUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        targetUser.setStatus(AccountStatus.SUSPENDED);
+        userRepository.save(targetUser);
     }
 
     @Override
     public void deleteAccountAsAuthority(String username) {
         User targetUser = userRepository.findByUsername(username)
-                .orElseThrow( () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-        targetUser.setStatus(AccountStatus.SUSPENDED);
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         userRepository.delete(targetUser);
     }
 
@@ -261,7 +280,9 @@ public class UserServiceImpl implements UserService {
                 .authorUsername(post.getAuthor().getUsername())
                 .serieName(post.getSerie() != null ? post.getSerie().getName() : null)
                 .contentType(post.getContentType())
-                .imageUrls(post.getImageUrls())
+                // Copia defensiva: getImageUrls devuelve la colección perezosa de Hibernate,
+                // que ya no se puede inicializar cuando Jackson serializa fuera de la transacción.
+                .imageUrls(List.copyOf(post.getImageUrls()))
                 .status(post.getStatus())
                 .privacy(post.getPrivacy())
                 .viewsCount(post.getViewsCount())

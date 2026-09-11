@@ -3,8 +3,11 @@ package com.nakamahub.backend.models;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -21,15 +24,19 @@ import java.util.Set;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
+@ToString(onlyExplicitlyIncluded = true)
 public class Post {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ToString.Include
     private Long id;
 
     @Column(nullable = false)
+    @ToString.Include
     private String title;
 
     @Column(columnDefinition = "TEXT", nullable = false)
@@ -38,8 +45,8 @@ public class Post {
     @ElementCollection
     @CollectionTable(name = "post_images", joinColumns = @JoinColumn(name = "post_id"))
     @Column(name = "image_url")
+    @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
-
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -49,7 +56,7 @@ public class Post {
     private LocalDateTime updatedAt;
 
     // Autor del post
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
@@ -60,9 +67,12 @@ public class Post {
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "category_id")
     )
+    // Sin esto Hibernate lanza una consulta de categorías por cada post de la página.
+    @BatchSize(size = 50)
+    @Builder.Default
     private Set<Category> categories = new HashSet<>();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "serie_id")
     private Serie serie;
 
@@ -71,16 +81,38 @@ public class Post {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private PostStatus status = PostStatus.DRAFT;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private PrivacyLevel privacy = PrivacyLevel.PUBLIC;
 
-    private  int viewsCount = 0;
+    @Builder.Default
+    private int viewsCount = 0;
+
+    @Builder.Default
     private int likesCount = 0;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
+    /** Identidad por clave primaria. Ver la explicación en {@link User#equals(Object)}. */
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof Post post)) {
+            return false;
+        }
+        return id != null && id.equals(post.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

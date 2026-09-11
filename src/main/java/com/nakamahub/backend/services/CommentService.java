@@ -5,19 +5,20 @@ import com.nakamahub.backend.dtos.comment.CreateCommentDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-
 public interface CommentService {
 
-    CommentResponseDTO createComment (CreateCommentDTO createCommentDTO, String username);
+    CommentResponseDTO createComment(CreateCommentDTO createCommentDTO, String username);
 
-    Page<CommentResponseDTO> getCommentsByPost (Long postId, Pageable pageable);
+    /** @param viewerUsername null en peticiones anónimas. */
+    Page<CommentResponseDTO> getCommentsByPost(Long postId, Pageable pageable, String viewerUsername);
 
-    Page<CommentResponseDTO> getCommentsByUser(Long authorId, Pageable pageable);
+    /** @param viewerUsername null en peticiones anónimas. */
+    Page<CommentResponseDTO> getCommentsByUser(Long authorId, Pageable pageable, String viewerUsername);
 
-    Page<CommentResponseDTO> getCommentsByParent (Long parentId, Pageable pageable);
+    /** @param viewerUsername null en peticiones anónimas. */
+    Page<CommentResponseDTO> getCommentsByParent(Long parentId, Pageable pageable, String viewerUsername);
 
-    void deleteComment (Long commentId, String authorUsername);
+    void deleteComment(Long commentId, String authorUsername);
 
     void deleteCommentAsAuthority(Long id);
-
 }
