@@ -15,6 +15,12 @@ RUN ./mvnw -B -q package -DskipTests
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
+# curl lo usa la comprobación de salud del compose. Las imágenes jre no lo traen,
+# y sin él el contenedor se quedaría para siempre en estado "starting".
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Usuario sin privilegios: si alguien logra ejecutar algo dentro, que sea como nadie.
 RUN useradd --system --uid 1001 nakama
 USER nakama

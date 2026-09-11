@@ -55,6 +55,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/error", "/sitemap.xml").permitAll()
+                        // Solo el estado. Los demás endpoints de actuator no se exponen.
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         // Documentación de la API. Conviene cerrarla en producción si la
                         // comunidad crece: enseña la superficie entera a cualquiera.
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

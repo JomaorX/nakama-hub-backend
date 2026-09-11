@@ -32,6 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
+## copias de seguridad de la base de datos
+copias/
+
 ## environment variables
 .env
 .env.local

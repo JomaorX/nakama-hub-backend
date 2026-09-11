@@ -43,12 +43,21 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-no-responder@nakamahub.example}
+    healthcheck:
+      # Arrancar Spring con la base de datos lleva su tiempo; start_period evita
+      # que los primeros fallos cuenten como caída y reinicien el contenedor.
+      test: ["CMD", "sh", "-c", "curl -fsS http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   frontend:
     build: ./frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       # El render en servidor llama a la API desde dentro de la red de Docker.
       API_ORIGIN: http://backend:8080

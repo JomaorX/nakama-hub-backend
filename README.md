@@ -58,9 +58,29 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 
 ## 🚢 Despliegue
 
-Todo se levanta en un único servidor con `docker compose up -d --build`: MySQL,
-la API, el render en servidor de Angular y Caddy como proxy, que se encarga solo
-del certificado HTTPS. Un VPS pequeño sirve de sobra para empezar.
+Un solo comando en un servidor con Docker:
+
+```bash
+./deploy.sh
+```
+
+La primera vez crea el `.env`, genera los secretos, pregunta el dominio y levanta
+MySQL, la API, el render en servidor de Angular y Caddy como proxy, que se encarga
+solo del certificado HTTPS. Las siguientes ejecuciones actualizan la versión
+desplegada sin tocar nada de lo que ya hay. Un VPS pequeño sirve de sobra para
+empezar.
+
+| Orden | Qué hace |
+|---|---|
+| `./deploy.sh` | Levanta o actualiza la pila entera |
+| `./deploy.sh estado` | Qué está corriendo y si está sano |
+| `./deploy.sh logs` | Sigue los registros de todos los servicios |
+| `./deploy.sh parar` | Detiene la pila conservando los datos |
+| `./deploy.sh copia` | Vuelca la base de datos a `copias/` |
+
+El estado de la aplicación está en `/actuator/health`, que es lo que usan la
+comprobación de salud del contenedor y el propio script para saber cuándo la API
+está lista de verdad.
 
 ## 📦 Funcionalidad
 
