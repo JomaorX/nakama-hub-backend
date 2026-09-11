@@ -55,7 +55,9 @@ class AuthSecurityTest {
                                 {"identifier": "luffy", "password": "%s"}
                                 """.formatted(TestDataFactory.PASSWORD)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").isNotEmpty());
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.expiresIn").isNumber());
     }
 
     @Test

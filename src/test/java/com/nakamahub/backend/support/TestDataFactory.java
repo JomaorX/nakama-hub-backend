@@ -3,6 +3,7 @@ package com.nakamahub.backend.support;
 import com.nakamahub.backend.models.*;
 import com.nakamahub.backend.repositories.CategoryRepository;
 import com.nakamahub.backend.repositories.CommentRepository;
+import com.nakamahub.backend.repositories.RefreshTokenRepository;
 import com.nakamahub.backend.repositories.PostRepository;
 import com.nakamahub.backend.repositories.UserRepository;
 import com.nakamahub.backend.security.JwtUtil;
@@ -21,6 +22,7 @@ public class TestDataFactory {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -28,12 +30,14 @@ public class TestDataFactory {
                            PostRepository postRepository,
                            CategoryRepository categoryRepository,
                            CommentRepository commentRepository,
+                           RefreshTokenRepository refreshTokenRepository,
                            PasswordEncoder passwordEncoder,
                            JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.commentRepository = commentRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
@@ -106,6 +110,7 @@ public class TestDataFactory {
 
     @Transactional
     public void clear() {
+        refreshTokenRepository.deleteAll();
         commentRepository.deleteAll();
         postRepository.deleteAll();
         userRepository.deleteAll();

@@ -68,6 +68,12 @@ public class UserController {
         return userService.updatePrivacy(SecurityUtils.requireCurrentUsername(), dto.getPrivacy());
     }
 
+    @PutMapping("/me/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
+        userService.changePassword(SecurityUtils.requireCurrentUsername(), dto);
+    }
+
     @GetMapping("/me/export")
     @ResponseStatus(HttpStatus.OK)
     public UserDataExportDTO exportMyData() {

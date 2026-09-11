@@ -3,6 +3,7 @@ package com.nakamahub.backend.controllers;
 import com.nakamahub.backend.dtos.user.CreateUserDTO;
 import com.nakamahub.backend.dtos.auth.LoginResponseDTO;
 import com.nakamahub.backend.dtos.auth.LoginUserDTO;
+import com.nakamahub.backend.dtos.auth.RefreshTokenRequestDTO;
 import com.nakamahub.backend.dtos.auth.SignupResponseDTO;
 import com.nakamahub.backend.services.UserService;
 import jakarta.validation.Valid;
@@ -27,5 +28,18 @@ public class UserAuthController {
     @ResponseStatus(HttpStatus.OK)
     public LoginResponseDTO login (@Valid @RequestBody LoginUserDTO loginUserDTO){
         return  userService.authenticateUser(loginUserDTO);
+    }
+
+    /** Canjea el token de refresco por un par nuevo. El anterior queda invalidado. */
+    @PostMapping("/refresh")
+    @ResponseStatus(HttpStatus.OK)
+    public LoginResponseDTO refresh (@Valid @RequestBody RefreshTokenRequestDTO dto){
+        return userService.refreshSession(dto.getRefreshToken());
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout (@Valid @RequestBody RefreshTokenRequestDTO dto){
+        userService.logout(dto.getRefreshToken());
     }
 }

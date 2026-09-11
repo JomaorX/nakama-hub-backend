@@ -36,6 +36,9 @@ public class UserServiceImpl implements UserService {
     JwtUtil jwtUtil;
 
     @Autowired
+    RefreshTokenService refreshTokenService;
+
+    @Autowired
     PostVisibility postVisibility;
 
     @Autowired
@@ -95,13 +98,56 @@ public class UserServiceImpl implements UserService {
                             : "Tu cuenta ha sido eliminada");
         }
 
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole().name());
+        return issueSession(user);
+    }
 
+    @Override
+    public LoginResponseDTO refreshSession(String refreshToken) {
+        User user = refreshTokenService.rotate(refreshToken);
+
+        if (user.getStatus() != AccountStatus.ACTIVE) {
+            refreshTokenService.revokeAllFor(user);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tu cuenta ya no está activa");
+        }
+
+        return issueSession(user);
+    }
+
+    @Override
+    public void logout(String refreshToken) {
+        refreshTokenService.revoke(refreshToken);
+    }
+
+    @Override
+    public void changePassword(String username, ChangePasswordDTO dto) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "La contraseña actual no es correcta");
+        }
+
+        if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La contraseña nueva debe ser distinta de la actual");
+        }
+
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
+
+        // Si la contraseña se cambia porque la cuenta estaba comprometida, dejar vivas
+        // las sesiones anteriores no serviría de nada.
+        refreshTokenService.revokeAllFor(user);
+    }
+
+    private LoginResponseDTO issueSession(User user) {
         return LoginResponseDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .token(token)
+                .accessToken(jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole().name()))
+                .refreshToken(refreshTokenService.issue(user))
+                .expiresIn(jwtUtil.getExpirationSeconds())
                 .build();
     }
 
@@ -244,6 +290,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         user.setStatus(AccountStatus.SUSPENDED);
         userRepository.save(user);
+        refreshTokenService.revokeAllFor(user);
     }
 
     @Override
@@ -258,6 +305,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         targetUser.setStatus(AccountStatus.SUSPENDED);
         userRepository.save(targetUser);
+        refreshTokenService.revokeAllFor(targetUser);
     }
 
     @Override
@@ -296,6 +344,7 @@ public class UserServiceImpl implements UserService {
         user.setDeletedAt(LocalDateTime.now());
 
         userRepository.save(user);
+        refreshTokenService.revokeAllFor(user);
     }
 
     /**

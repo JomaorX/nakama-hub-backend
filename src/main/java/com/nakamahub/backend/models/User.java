@@ -58,6 +58,15 @@ public class User {
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
+    /**
+     * Solo cascada de borrado, sin orphanRemoval: los tokens se crean y revocan desde
+     * RefreshTokenService, nunca manipulando esta colección, y orphanRemoval podría
+     * borrar un token recién emitido si la colección llegara a cargarse.
+     */
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    @Builder.Default
+    private List<RefreshToken> refreshTokens = new ArrayList<>();
+
     private String bio;
 
     private String avatarUrl;

@@ -10,6 +10,15 @@ public interface UserService {
 
     SignupResponseDTO registerUser (CreateUserDTO createUserDTO);
     LoginResponseDTO authenticateUser (LoginUserDTO loginUserDTO);
+
+    /** Canjea un token de refresco por un par nuevo de tokens. */
+    LoginResponseDTO refreshSession (String refreshToken);
+
+    /** Cierra la sesión asociada a ese token de refresco. */
+    void logout (String refreshToken);
+
+    /** Cambia la contraseña y cierra todas las sesiones abiertas. */
+    void changePassword (String username, ChangePasswordDTO dto);
     void toggleFollow(String followerUsername, String targetUsername);
     UserProfileDTO getMe (String username);
     UserPublicProfileDTO getProfile (String targetUsername, String viewerUsername);

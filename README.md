@@ -35,7 +35,10 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 
 ### 🔐 Autenticación
 - Registro y login con contraseñas cifradas con BCrypt
-- Emisión y verificación de JWT
+- Token de acceso JWT de vida corta y token de refresco opaco de un solo uso
+- Rotación en cada refresco con detección de reutilización: si reaparece un token
+  ya gastado se revocan todas las sesiones del usuario
+- Cierre de sesión y cambio de contraseña, que invalida las sesiones abiertas
 - Roles: `USER`, `MODERATOR`, `ADMIN`
 - Las cuentas suspendidas quedan bloqueadas en el filtro de seguridad
 
@@ -73,7 +76,7 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 
 ## 🧭 Pendiente
 - Subida real de imágenes, ahora solo se guardan URLs
-- Verificación por email, recuperación de contraseña y refresh token
+- Verificación por email y recuperación de contraseña
 - Reporte y bloqueo de usuarios
 - Purgado definitivo de las cuentas anonimizadas pasado un plazo de retención
 - Migraciones con Flyway en lugar de `ddl-auto=update`

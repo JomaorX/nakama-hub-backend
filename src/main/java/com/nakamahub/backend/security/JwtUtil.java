@@ -70,6 +70,11 @@ public class JwtUtil {
         this.verifier = JWT.require(algorithm).build();
     }
 
+    /** Segundos de validez del token de acceso, para informar al cliente. */
+    public long getExpirationSeconds() {
+        return expirationMillis / 1000;
+    }
+
     public String generateToken(Long userId, String username, String role) {
         Instant now = Instant.now();
         return JWT.create()
