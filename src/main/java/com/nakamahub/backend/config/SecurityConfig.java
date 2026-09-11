@@ -55,6 +55,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/error").permitAll()
+                        // Documentación de la API. Conviene cerrarla en producción si la
+                        // comunidad crece: enseña la superficie entera a cualquiera.
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/auth/**").permitAll()
 
                         // Las rutas propias van antes que el comodín /api/users/{username},

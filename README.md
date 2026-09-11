@@ -5,6 +5,12 @@ comentarios anidados, categorías, seguimiento entre usuarios y reputación.
 
 ## 📖 Documentación de la API
 
+Con la aplicación levantada, la documentación se genera del propio código:
+
+- Swagger UI en `http://localhost:8080/swagger-ui.html`
+- Contrato OpenAPI en `http://localhost:8080/v3/api-docs`, del que se puede
+  generar directamente el cliente HTTP del frontend
+
 [![Postman Docs](https://img.shields.io/badge/Postman-API_Docs-orange)](https://documenter.getpostman.com/view/46853536/2sB3WqvgX9)
 
 ## 🚀 Tecnologías
@@ -84,7 +90,6 @@ La aplicación no arranca si `JWT_SECRET` falta o tiene menos de 32 bytes.
 - Bloqueo de usuarios entre sí
 - Purgado definitivo de las cuentas anonimizadas pasado un plazo de retención
 - Migraciones con Flyway en lugar de `ddl-auto=update`
-- Documentación viva con springdoc
 
 ## 🧠 Flujo de trabajo
 
